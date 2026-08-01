@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0d1117;
+  --foreground: #c9d1d9;
+  --surface: #161b22;
+  --border: #30363d;
+  --muted: #8b949e;
+  --accent-cyan: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-purple: #bc8cff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-green: var(--accent-green);
+  --color-accent-purple: var(--accent-purple);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1.2s step-end infinite;
+}
+
+::selection {
+  background: rgba(88, 166, 255, 0.3);
+  color: var(--foreground);
+}
+
+.card-glow {
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.card-glow-cyan:hover {
+  border-color: rgba(88, 166, 255, 0.6);
+  box-shadow:
+    0 0 16px rgba(88, 166, 255, 0.35),
+    0 0 32px rgba(88, 166, 255, 0.12),
+    inset 0 0 12px rgba(88, 166, 255, 0.06);
+}
+
+.card-glow-green:hover {
+  border-color: rgba(63, 185, 80, 0.6);
+  box-shadow:
+    0 0 16px rgba(63, 185, 80, 0.35),
+    0 0 32px rgba(63, 185, 80, 0.12),
+    inset 0 0 12px rgba(63, 185, 80, 0.06);
+}
+
+.card-glow-purple:hover {
+  border-color: rgba(188, 140, 255, 0.6);
+  box-shadow:
+    0 0 16px rgba(188, 140, 255, 0.35),
+    0 0 32px rgba(188, 140, 255, 0.12),
+    inset 0 0 12px rgba(188, 140, 255, 0.06);
+}
