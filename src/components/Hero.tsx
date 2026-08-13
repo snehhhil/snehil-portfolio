@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mail } from "lucide-react";
 import { profile } from "@/data/portfolio";
 import { GithubIcon, InstagramIcon, LinkedinIcon } from "./SocialIcons";
@@ -44,6 +44,13 @@ export function Hero() {
   const [bootPhase, setBootPhase] = useState<"prompt" | "initializing" | "ready">("prompt");
   const [bootStep, setBootStep] = useState(0);
   const [typedCharacters, setTypedCharacters] = useState(0);
+  const bootOutputRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    bootOutputRef.current?.scrollTo({
+      top: bootOutputRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [bootStep]);
 
   useEffect(() => {
     if (bootPhase === "ready") return;
@@ -126,16 +133,16 @@ export function Hero() {
         aria-live="polite"
         onClick={() => bootPhase === "prompt" && setBootPhase("initializing")}
       >
-        <div className="w-full max-w-4xl max-h-full overflow-hidden px-5 text-left font-mono text-xs leading-7 sm:px-8 sm:text-sm">
+        <div ref={bootOutputRef} className="max-h-[calc(100dvh-5rem)] w-full max-w-4xl overflow-x-hidden overflow-y-auto px-5 text-left font-mono text-[10px] leading-4 [overflow-wrap:anywhere] sm:max-h-[calc(100dvh-8rem)] sm:px-8 sm:text-xs sm:leading-5">
           {bootPhase === "prompt" ? (
             <p className="text-green-400">
-              <span className="text-cyan-400">$</span> initialise terminal
+              <span className="text-cyan-400">$</span> initialise portfolio.exe
               <span className="ml-2 text-zinc-500">(press any key or touch the screen)</span>
               <span className="cursor-blink ml-1 text-cyan-400">▋</span>
             </p>
           ) : (
             <div className="space-y-1">
-              <p className="text-green-400"><span className="text-cyan-400">$</span> initialise terminal</p>
+              <p className="text-green-400"><span className="text-cyan-400">$</span> initialise portfolio.exe</p>
               {BOOT_MESSAGES.slice(0, bootStep).map((message, index) => (
                 <p
                   key={message}
@@ -163,8 +170,8 @@ export function Hero() {
   }
 
   return (
-    <section className="relative flex min-h-screen items-center px-6 pt-24 pb-16">
-      <div className="mx-auto w-full max-w-5xl">
+    <section className="relative flex min-h-screen items-center overflow-hidden px-6 pt-24 pb-16">
+      <div className="relative mx-auto w-full max-w-5xl">
         <p className="animate-[fade-in_400ms_ease-out_both] mb-4 font-mono text-sm text-accent-green">
           {"// portfolio.exe initialized "}
         </p>

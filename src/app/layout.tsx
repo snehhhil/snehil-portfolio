@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Taskbar from "@/components/Taskbar";
+import { AmbientBackground } from "@/components/AmbientBackground";
 import { TerminalProvider } from "@/components/TerminalProvider";
 
 const geistSans = Geist({
@@ -48,6 +49,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <TerminalProvider>
+          <AmbientBackground />
           {children}
           <Taskbar />
         </TerminalProvider>

@@ -532,22 +532,22 @@ export function Terminal() {
         (isOpen
           ? "opacity-100 translate-y-0"
           : "max-h-0 opacity-0 -translate-y-3") +
-        (isMaximized && isOpen ? " fixed inset-0 z-50" : "")
+        (isMaximized && isOpen ? " fixed inset-0 z-50 h-screen w-screen" : "")
       }
       aria-hidden={!isOpen}
     >
       <div
         className={
           (isMaximized
-            ? "fixed inset-0 z-50 mx-auto max-w-none h-full p-4"
+            ? "h-full w-full max-w-none p-2 sm:p-4"
             : "mb-12 w-full max-w-[34rem]") +
-          " cursor-text overflow-hidden rounded-lg border border-border bg-surface shadow-2xl transition-all duration-300 ease-out transform " +
+          " flex flex-col cursor-text overflow-hidden rounded-lg border border-border bg-surface shadow-2xl transition-all duration-300 ease-out transform " +
           (isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none")
         }
         onClick={() => inputRef.current?.focus()}
         role="presentation"
       >
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
         <button
           aria-label="Close terminal"
           onClick={(e) => {
@@ -586,7 +586,7 @@ export function Terminal() {
           (isMinimized
             ? "hidden"
             : isMaximized
-            ? "h-[calc(100%-4.5rem)] overflow-y-auto"
+            ? "min-h-0 flex-1 overflow-y-auto"
             : "max-h-72 overflow-y-auto") +
           " p-5 font-mono text-sm leading-relaxed"
         }

@@ -663,7 +663,7 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   }, [gameId]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-background/90 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-background/90 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
       <div
         ref={containerRef}
         tabIndex={-1}

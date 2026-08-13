@@ -41,6 +41,7 @@ html {
 }
 
 body {
+  isolation: isolate;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
@@ -50,7 +51,7 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   background-image:
     linear-gradient(rgba(88, 166, 255, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(88, 166, 255, 0.03) 1px, transparent 1px);
@@ -77,6 +78,199 @@ body::before {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes hero-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 64px 64px, 64px 64px;
+  }
+}
+
+@keyframes hero-scanline-drift {
+  from {
+    transform: translateY(-12%);
+  }
+  to {
+    transform: translateY(12%);
+  }
+}
+
+@keyframes hero-orb-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(28px, -20px, 0) scale(1.08);
+  }
+}
+
+@keyframes ambient-aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(-3%, 0, 0) rotate(-3deg) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) rotate(4deg) scale(1.08);
+  }
+}
+
+@keyframes ambient-stars-twinkle {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.58;
+  }
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(88, 166, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 166, 255, 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, black 10%, transparent 78%);
+  animation: hero-grid-drift 18s linear infinite;
+}
+
+.ambient-background {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.98), rgba(7, 12, 20, 0.98));
+}
+
+.ambient-grid,
+.ambient-scanlines,
+.ambient-glow,
+.ambient-aurora,
+.ambient-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambient-aurora {
+  inset: -20%;
+  opacity: 0.8;
+  background:
+    radial-gradient(ellipse at 18% 28%, rgba(34, 211, 238, 0.16), transparent 25%),
+    radial-gradient(ellipse at 78% 22%, rgba(99, 102, 241, 0.14), transparent 27%),
+    radial-gradient(ellipse at 62% 78%, rgba(188, 140, 255, 0.13), transparent 28%),
+    radial-gradient(ellipse at 28% 82%, rgba(63, 185, 80, 0.08), transparent 24%);
+  filter: blur(28px);
+  transform: translate3d(var(--ambient-shift-reverse), var(--ambient-shift), 0);
+  animation: ambient-aurora-drift 18s ease-in-out infinite;
+}
+
+.ambient-stars {
+  opacity: 0.36;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 31% 62%, rgba(88, 166, 255, 0.75) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 54% 24%, rgba(255, 255, 255, 0.65) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 76% 70%, rgba(188, 140, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 91% 36%, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px);
+  background-size: 260px 230px, 310px 280px, 370px 330px, 290px 260px, 420px 380px;
+  background-position: var(--ambient-shift) var(--ambient-shift-reverse);
+  animation: ambient-stars-twinkle 5s ease-in-out infinite;
+}
+
+.ambient-grid {
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(88, 166, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88, 166, 255, 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: 0 var(--ambient-shift), var(--ambient-shift-reverse) 0;
+  mask-image: radial-gradient(ellipse at center, black 8%, transparent 82%);
+}
+
+.ambient-scanlines {
+  opacity: 0.07;
+  background: repeating-linear-gradient(180deg, transparent 0, transparent 5px, rgba(88, 166, 255, 0.035) 6px, transparent 7px);
+  transform: translateY(var(--ambient-shift-reverse));
+}
+
+.ambient-glow {
+  inset: auto;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 9999px;
+  filter: blur(70px);
+  will-change: transform;
+}
+
+.ambient-glow-cyan {
+  left: -12rem;
+  top: 14%;
+  background: rgba(34, 211, 238, 0.13);
+  transform: translate3d(var(--ambient-shift), var(--ambient-shift-reverse), 0);
+}
+
+.ambient-glow-purple {
+  right: -13rem;
+  top: 42%;
+  background: rgba(188, 140, 255, 0.12);
+  transform: translate3d(var(--ambient-shift-reverse), var(--ambient-shift), 0);
+}
+
+.ambient-glow-green {
+  left: 35%;
+  bottom: -18rem;
+  width: 28rem;
+  height: 28rem;
+  background: rgba(63, 185, 80, 0.045);
+  transform: translate3d(var(--ambient-shift-reverse), var(--ambient-shift-reverse), 0);
+}
+
+.ambient-background ~ * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-scanlines {
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 5px,
+    rgba(88, 166, 255, 0.035) 6px,
+    transparent 7px
+  );
+  animation: hero-scanline-drift 9s ease-in-out infinite alternate;
+}
+
+.hero-orb {
+  animation: hero-orb-float 10s ease-in-out infinite;
+}
+
+.hero-orb-cyan {
+  background: rgba(34, 211, 238, 0.09);
+}
+
+.hero-orb-purple {
+  background: rgba(188, 140, 255, 0.08);
+  animation-delay: -4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-grid,
+  .hero-scanlines,
+  .hero-orb,
+  .ambient-aurora,
+  .ambient-stars {
+    animation: none;
+  }
+
 }
 
 .cursor-blink {

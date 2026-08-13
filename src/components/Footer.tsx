@@ -11,6 +11,7 @@ export function Footer() {
           {profile.name} · {year}&quot;
         </p>
         <p className="font-mono text-xs text-muted/60">
+          © {year} {profile.name}. All rights reserved.
         </p>
       </div>
     </footer>

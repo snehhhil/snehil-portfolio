@@ -21,7 +21,6 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0 });
     if (window.location.hash) {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
@@ -29,7 +28,7 @@ export function Header() {
 
   return isInitialized ? (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-[80] transition-all duration-300 ${
         scrolled
           ? "bg-background/80 backdrop-blur-xl" //border-b border-border 
           : "bg-transparent"
@@ -79,7 +78,7 @@ export function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="border-t border-border bg-background/95 px-6 py-4 backdrop-blur-xl md:hidden">
+        <nav className="relative z-[81] border-t border-border bg-background px-6 py-4 shadow-2xl backdrop-blur-xl md:hidden">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => {
               const active = activeSection === link.href.replace("#", "");
