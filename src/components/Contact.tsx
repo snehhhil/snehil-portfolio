@@ -38,8 +38,7 @@ export function Contact() {
           id="contact"
           number="05. contact"
           title="Let's connect"
-          subtitle="Open to interesting projects, collaborations, and conversations about tech."
-        />
+ />
 
         <div className="grid gap-4 grid-cols-1">
           {links.map(({ label, value, href, icon: Icon }) => (

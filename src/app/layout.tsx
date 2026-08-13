@@ -17,20 +17,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Snehil — Software Development Engineer",
   description:
-    "Portfolio of Snehil — SDE at Servosys Solutions. Full-stack engineer specializing in FinTech, React, Java, and machine learning.",
+    "Portfolio of Snehil — SDE at Servosys Solutions. Full-stack engineer specializing in React, Java, Javascript",
   keywords: [
     "Snehil",
     "Software Engineer",
-    "FinTech",
     "React",
-    "Machine Learning",
     "Full Stack Developer",
   ],
   authors: [{ name: "Snehil" }],
   openGraph: {
     title: "Snehil — Software Development Engineer",
     description:
-      "Full-stack engineer · FinTech · Machine Learning. Building enterprise platforms and ML experiments.",
+      "Full-stack engineer · JAVA · JSP · SQL",
     type: "website",
   },
 };

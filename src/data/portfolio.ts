@@ -1,14 +1,14 @@
 export const profile = {
   name: "Snehil",
   title: "Software Development Engineer",
-  tagline: "Full-stack engineer · FinTech · Machine Learning",
+  tagline: "Full-stack engineer",
   location: "Ghaziabad, UP, India",
   email: "snehillsinghh@gmail.com",
   github: "https://github.com/snehhhil",
   linkedin: "https://linkedin.com/in/snehillsinghh",
   instagram: "https://instagram.com/snehillsinghh",
   summary:
-    "Computer Science graduate and SDE-1 at Servosys Solutions, building enterprise FinTech platforms for loan origination and workflow automation. I bridge client needs with engineering — from JDK migrations and theme systems to ML-powered side projects in computer vision and healthcare.",
+    "I’m someone who’s naturally curious and always wants to learn, try new things, and see where they take me. I care about doing things well, but I am also fancier cars, technology, music and collecting. I’m still figuring things out as I go, but I’m always trying to grow, experience more, and become a better version of myself.",
 };
 
 export type EducationItem = {
@@ -124,10 +124,9 @@ export const skills = {
 };
 
 export const interests = [
-  "FinTech & enterprise systems",
-  "Machine learning & computer vision",
-  "Full-stack web development",
-  "Workflow automation",
+  "smoking tyres",
+  "playing strings",
+  "I code as well",
 ];
 
 export const navLinks = [

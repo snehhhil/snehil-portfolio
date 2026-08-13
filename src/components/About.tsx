@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import { interests, profile } from "@/data/portfolio";
 import { SectionHeading } from "./SectionHeading";
+import { ResumeButton } from "./ResumeButton";
 
 export function About() {
   return (
@@ -9,8 +10,7 @@ export function About() {
         <SectionHeading
           id="about"
           number="01. about"
-          title="Building at the intersection of code & finance"
-          subtitle="From enterprise loan systems to ML experiments — I like shipping things that work in production."
+          title="How I define myself"
         />
 
         <div className="grid gap-8 lg:grid-cols-5">
@@ -20,9 +20,12 @@ export function About() {
               <MapPin size={14} className="text-accent-cyan" />
               {profile.location}
             </p>
+            <div>
+              {/* <ResumeButton /> */}
+            </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-surface p-6 lg:col-span-2">
+          <div className="-translate-y-[50px] rounded-lg border border-border bg-surface p-6 lg:col-span-2">
             <h3 className="mb-4 font-mono text-xs uppercase tracking-wider text-accent-green">
               interests[]
             </h3>

@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { navLinks, profile } from "@/data/portfolio";
 import { useActiveSection } from "@/hooks/useActiveSection";
+import { ResumeButton } from "./ResumeButton";
+import { useTerminal } from "./TerminalProvider";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isInitialized } = useTerminal();
 
   const activeSection = useActiveSection();
 
@@ -24,7 +27,7 @@ export function Header() {
     }
   }, []);
 
-  return (
+  return isInitialized ? (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
@@ -62,6 +65,7 @@ export function Header() {
               </a>
             );
           })}
+          <ResumeButton compact />
         </nav>
 
         <button
@@ -94,9 +98,10 @@ export function Header() {
                 </a>
               );
             })}
+            <ResumeButton />
           </div>
         </nav>
       )}
     </header>
-  );
+  ) : null;
 }

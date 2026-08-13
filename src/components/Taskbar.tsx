@@ -6,14 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { navLinks } from "@/data/portfolio";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { useTerminal } from "./TerminalProvider";
-import { TaskbarHint } from "./TaskbarHint";
+// import { TaskbarHint } from "./TaskbarHint";
 
 export default function Taskbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isOpen, setIsOpen } = useTerminal();
+  const { isInitialized, isOpen, setIsOpen } = useTerminal();
   const activeSection = useActiveSection();
-  const [isPinned, setIsPinned] = useState(false);
+  const [isPinned, setIsPinned] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(false);
   const visible = isPinned || isHovered || isIntroVisible;
@@ -74,7 +74,7 @@ export default function Taskbar() {
     </button>
   );
 
-  return (
+  return isInitialized ? (
     <div
       className="fixed right-[10px] top-1/2 z-40 -translate-y-1/2"
       onMouseEnter={() => setIsHovered(true)}
@@ -143,5 +143,5 @@ export default function Taskbar() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 }

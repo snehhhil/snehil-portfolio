@@ -15,7 +15,6 @@ export function Skills() {
           id="skills"
           number="03. skills"
           title="Tech stack"
-          subtitle="Tools I use to build FinTech platforms, APIs, and ML side projects."
         />
 
         <div className="grid gap-6 md:grid-cols-3">

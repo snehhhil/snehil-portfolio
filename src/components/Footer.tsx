@@ -11,7 +11,6 @@ export function Footer() {
           {profile.name} · {year}&quot;
         </p>
         <p className="font-mono text-xs text-muted/60">
-          Next.js · Tailwind · TypeScript
         </p>
       </div>
     </footer>

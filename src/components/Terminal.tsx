@@ -12,15 +12,15 @@ interface TerminalLine {
 }
 
 const INITIAL_LINES: TerminalLine[] = [
-  {type : "input", text: "snhl initiate"},
-  { type: "output", text: "Welcome to snehil's terminal." },
+  {type : "input", text: "snhl initiate terminal"},
+  { type: "output", text: "Snehil's terminal initialized" },
   // { type: "input", text: "whoami" },
   { type: "output", text: `${profile.name} — SDE @ Servosys` },
   // { type: "input", text: "cat interests.txt" },
-  {
-    type: "output",
-    text: "FinTech platforms · React & Java · ML & CV experiments",
-  },
+  // {
+  //   type: "output",
+  //   text: "FinTech platforms · React & Java · ML & CV experiments",
+  // },
   { type: "hint", text: "Type help for available commands" },
 ];
 
@@ -69,7 +69,8 @@ const PAGE_ANCHORS: Record<string, string> = {
 const GAME_COMMANDS: Record<string, string> = {
   snake: "snake",
   tetris: "tetris",
-  pacman: "pacman",
+  "2048": "2048",
+  minesweeper: "minesweeper",
   sudoku: "sudoku",
   maze: "maze",
 };
@@ -77,7 +78,8 @@ const GAME_COMMANDS: Record<string, string> = {
 const GAME_LABELS: Record<string, string> = {
   snake: "Snake",
   tetris: "Tetris",
-  pacman: "Pacman",
+  "2048": "2048",
+  minesweeper: "Minesweeper",
   sudoku: "Sudoku",
   maze: "Maze",
 };
@@ -237,10 +239,6 @@ function runCommand(command: string | null): TerminalLine[] {
         },
         {
           type: "output",
-          text: "  └ POC for Five-Star Business Finance, FinTech platforms",
-        },
-        {
-          type: "output",
           text: "HighRadius Corporation — Fin-Tech Advisor Intern (2025)",
         },
         { type: "hint", text: "Scroll to #experience for the full timeline." },
@@ -268,27 +266,15 @@ function runCommand(command: string | null): TerminalLine[] {
       return [
         {
           type: "output",
-          text: "FinTech & enterprise systems",
-        },
-        {
-          type: "output",
-          text: "Machine learning & computer vision",
-        },
-        {
-          type: "output",
-          text: "Full-stack web development",
-        },
-        {
-          type: "output",
-          text: "Workflow automation",
-        },
+          text: "cars, chords and code",
+        }
       ];
 
     case "status":
       return [
         {
           type: "output",
-          text: "● Online — open to interesting projects & collaborations",
+          text: "● online on social networks",
         },
       ];
 
@@ -386,7 +372,8 @@ export function Terminal() {
         { type: "output", text: "Available games:" },
         { type: "output", text: "  • Snake" },
         { type: "output", text: "  • Tetris" },
-        { type: "output", text: "  • Pacman" },
+        { type: "output", text: "  • 2048" },
+        { type: "output", text: "  • Minesweeper" },
         { type: "output", text: "  • Sudoku" },
         { type: "output", text: "  • Maze" },
         { type: "hint", text: "Usage: snhl play snake" },
@@ -541,7 +528,7 @@ export function Terminal() {
   return (
     <div
       className={
-        "transition-all duration-300 ease-out " +
+        "w-full transition-all duration-300 ease-out " +
         (isOpen
           ? "opacity-100 translate-y-0"
           : "max-h-0 opacity-0 -translate-y-3") +
@@ -553,7 +540,7 @@ export function Terminal() {
         className={
           (isMaximized
             ? "fixed inset-0 z-50 mx-auto max-w-none h-full p-4"
-            : "mb-12 max-w-2xl mx-auto") +
+            : "mb-12 w-full max-w-[34rem]") +
           " cursor-text overflow-hidden rounded-lg border border-border bg-surface shadow-2xl transition-all duration-300 ease-out transform " +
           (isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none")
         }

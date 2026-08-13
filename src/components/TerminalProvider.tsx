@@ -6,20 +6,25 @@ type TerminalContextType = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   toggleOpen: () => void;
+  isInitialized: boolean;
+  setIsInitialized: (initialized: boolean) => void;
 };
 
 const TerminalContext = createContext<TerminalContextType | undefined>(undefined);
 
 export function TerminalProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const value = useMemo(
     () => ({
       isOpen,
       setIsOpen,
       toggleOpen: () => setIsOpen((current) => !current),
+      isInitialized,
+      setIsInitialized,
     }),
-    [isOpen]
+    [isInitialized, isOpen]
   );
 
   return (

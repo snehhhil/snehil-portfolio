@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SectionHeading } from "./SectionHeading";
 
-type GameId = "snake" | "tetris" | "pacman" | "sudoku" | "maze";
+type GameId = "snake" | "tetris" | "2048" | "minesweeper" | "sudoku" | "maze";
 
 type LeaderboardEntry = {
   score: number;
@@ -36,35 +36,48 @@ type GameProps = {
   onScoreChange: (score: number) => void;
 };
 
+type MineCell = {
+  mine: boolean;
+  revealed: boolean;
+  flagged: boolean;
+  adjacent: number;
+};
+
 const GAME_CATALOG: Array<{ id: GameId; title: string; subtitle: string; accent: string }> = [
   {
     id: "snake",
     title: "Snake",
-    subtitle: "Classic arcade survival. Chase food, avoid yourself, and push your score higher.",
+    subtitle: "Eat, grow, and don’t bite your own tail. How long can you last?",
     accent: "text-accent-cyan",
   },
   {
     id: "tetris",
     title: "Tetris",
-    subtitle: "Stack falling pieces, clear rows, and beat your best run.",
+    subtitle: "Stack the pieces, clear the lines, and see how high you can score.",
     accent: "text-accent-green",
   },
   {
-    id: "pacman",
-    title: "Pacman",
-    subtitle: "Collect pellets and dodge the ghost in a compact maze chase.",
-    accent: "text-accent-purple",
+    id: "2048",
+    title: "2048",
+    subtitle: "Merge matching tiles and build your highest-value run.",
+    accent: "text-amber-300",
+  },
+  {
+    id: "minesweeper",
+    title: "Minesweeper",
+    subtitle: "Map the field, flag the mines, and clear every safe cell.",
+    accent: "text-rose-300",
   },
   {
     id: "sudoku",
     title: "Sudoku",
-    subtitle: "Fill the board with the correct numbers and complete the logic puzzle.",
+    subtitle: "Fill in the numbers, trust your logic, and solve the puzzle.",
     accent: "text-amber-300",
   },
   {
     id: "maze",
     title: "Maze",
-    subtitle: "Guide the runner through a compact maze and reach the exit as fast as you can.",
+    subtitle: "Find your way out before time runs out.",
     accent: "text-rose-300",
   },
 ];
@@ -75,6 +88,80 @@ const TETRIS_ROWS = 12;
 const TETRIS_COLS = 10;
 const PACMAN_ROWS = 10;
 const PACMAN_COLS = 10;
+const TILE_2048_SIZE = 4;
+const MINESWEEPER_SIZE = 8;
+const MINESWEEPER_MINES = 10;
+
+function create2048Board() {
+  const board = Array.from({ length: TILE_2048_SIZE }, () => Array(TILE_2048_SIZE).fill(0));
+  return add2048Tile(add2048Tile(board));
+}
+
+function add2048Tile(board: number[][]) {
+  const empty = board.flatMap((row, rowIndex) => row.map((value, colIndex) => (value ? null : [rowIndex, colIndex] as const)).filter(Boolean) as Array<readonly [number, number]>);
+  if (empty.length === 0) return board;
+  const [row, col] = empty[Math.floor(Math.random() * empty.length)];
+  const next = board.map((boardRow) => [...boardRow]);
+  next[row][col] = Math.random() < 0.9 ? 2 : 4;
+  return next;
+}
+
+function merge2048Line(line: number[]) {
+  const values = line.filter(Boolean);
+  const merged: number[] = [];
+  let score = 0;
+  for (let index = 0; index < values.length; index += 1) {
+    if (values[index] === values[index + 1]) {
+      const value = values[index] * 2;
+      merged.push(value);
+      score += value;
+      index += 1;
+    } else {
+      merged.push(values[index]);
+    }
+  }
+  return { line: [...merged, ...Array(TILE_2048_SIZE - merged.length).fill(0)], score };
+}
+
+function move2048Board(board: number[][], direction: "up" | "down" | "left" | "right") {
+  const next = Array.from({ length: TILE_2048_SIZE }, () => Array(TILE_2048_SIZE).fill(0));
+  let gained = 0;
+  for (let index = 0; index < TILE_2048_SIZE; index += 1) {
+    const line = direction === "left" || direction === "right"
+      ? [...board[index]]
+      : board.map((row) => row[index]);
+    const reversed = direction === "right" || direction === "down";
+    const result = merge2048Line(reversed ? line.reverse() : line);
+    const output = reversed ? result.line.reverse() : result.line;
+    gained += result.score;
+    output.forEach((value, outputIndex) => {
+      if (direction === "left" || direction === "right") next[index][outputIndex] = value;
+      else next[outputIndex][index] = value;
+    });
+  }
+  const changed = board.some((row, rowIndex) => row.some((value, colIndex) => value !== next[rowIndex][colIndex]));
+  return { board: changed ? add2048Tile(next) : next, gained, changed };
+}
+
+function createMinefield() {
+  const cells = Array.from({ length: MINESWEEPER_SIZE * MINESWEEPER_SIZE }, () => ({ mine: false, revealed: false, flagged: false, adjacent: 0 }));
+  let placed = 0;
+  while (placed < MINESWEEPER_MINES) {
+    const index = Math.floor(Math.random() * cells.length);
+    if (!cells[index].mine) {
+      cells[index].mine = true;
+      placed += 1;
+    }
+  }
+  return cells.map((cell, index) => {
+    const row = Math.floor(index / MINESWEEPER_SIZE);
+    const col = index % MINESWEEPER_SIZE;
+    const adjacent = [-1, 0, 1].flatMap((rowOffset) => [-1, 0, 1].map((colOffset) => [row + rowOffset, col + colOffset]))
+      .filter(([nextRow, nextCol]) => (nextRow !== row || nextCol !== col) && nextRow >= 0 && nextRow < MINESWEEPER_SIZE && nextCol >= 0 && nextCol < MINESWEEPER_SIZE)
+      .filter(([nextRow, nextCol]) => cells[nextRow * MINESWEEPER_SIZE + nextCol].mine).length;
+    return { ...cell, adjacent };
+  });
+}
 
 function isMazeReachable(layout: string[], start: [number, number], goal: [number, number]) {
   const queue: Array<[number, number]> = [start];
@@ -196,10 +283,10 @@ const TETROMINOES: Tetromino[] = [
 ];
 
 const PACMAN_WALLS = new Set([
-  "0-0","1-0","2-0","3-0","4-0","5-0","6-0","7-0","8-0","9-0",
-  "0-1","9-1","0-2","9-2","0-3","9-3","0-4","9-4","0-5","9-5",
-  "0-6","9-6","0-7","9-7","0-8","9-8","0-9","1-9","2-9","3-9",
-  "4-9","5-9","6-9","7-9","8-9","9-9",
+  "0-0", "1-0", "2-0", "3-0", "4-0", "5-0", "6-0", "7-0", "8-0", "9-0",
+  "0-1", "9-1", "0-2", "9-2", "0-3", "9-3", "0-4", "9-4", "0-5", "9-5",
+  "0-6", "9-6", "0-7", "9-7", "0-8", "9-8", "0-9", "1-9", "2-9", "3-9",
+  "4-9", "5-9", "6-9", "7-9", "8-9", "9-9",
 ]);
 
 function shuffle<T>(items: T[]) {
@@ -353,6 +440,23 @@ function GameCard({ game, onOpen }: { game: (typeof GAME_CATALOG)[number]; onOpe
   );
 }
 
+function TouchController({ rotate = false }: { rotate?: boolean }) {
+  const press = (key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  };
+
+  return (
+    <div className="touch-controller mx-auto w-full max-w-[17rem] grid-cols-3 grid-rows-2 gap-2 rounded-xl border border-border bg-background/70 p-3 shadow-inner shadow-black/20">
+      <button type="button" aria-label={rotate ? "Rotate piece" : "Move up"} onClick={() => press("ArrowUp")} className="col-start-2 row-start-1 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-accent-cyan transition active:scale-95 active:border-accent-cyan/70">
+        ↑
+      </button>
+      <button type="button" aria-label="Move left" onClick={() => press("ArrowLeft")} className="col-start-1 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">←</button>
+      <button type="button" aria-label="Move down" onClick={() => press("ArrowDown")} className="col-start-2 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">↓</button>
+      <button type="button" aria-label="Move right" onClick={() => press("ArrowRight")} className="col-start-3 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">→</button>
+    </div>
+  );
+}
+
 function Leaderboard({ gameId, score }: { gameId: GameId; score?: number }) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
@@ -450,8 +554,10 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
         return <SnakeGame onScoreChange={setLatestScore} />;
       case "tetris":
         return <TetrisGame onScoreChange={setLatestScore} />;
-      case "pacman":
-        return <PacmanGame onScoreChange={setLatestScore} />;
+      case "2048":
+        return <Game2048 onScoreChange={setLatestScore} />;
+      case "minesweeper":
+        return <MinesweeperGame onScoreChange={setLatestScore} />;
       case "sudoku":
         return <SudokuGame onScoreChange={setLatestScore} />;
       case "maze":
@@ -462,20 +568,20 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   }, [gameId]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/90 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-background/90 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
       <div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-2xl"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:p-4"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">{gameId}</p>
             <h3 className="text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h3>
           </div>
-          <div className="flex gap-2">
+          <div className="flex max-w-full flex-wrap gap-2">
             <button
               type="button"
               onClick={toggleFullscreen}
@@ -493,8 +599,8 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-          <div className="rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-3 shadow-inner shadow-black/10">{gameContent}</div>
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
+          <div className="min-w-0 rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-3 shadow-inner shadow-black/10">{gameContent}</div>
           <Leaderboard gameId={gameId} score={latestScore} />
         </div>
       </div>
@@ -595,7 +701,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Score: {score}</p>
-          <p className="text-sm text-muted">Use arrow keys to steer the snake.</p>
+          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
@@ -618,6 +724,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
           ))}
         </div>
       </div>
+      <TouchController />
       {gameOver && <p className="font-mono text-sm text-accent-purple">Game over — restart to try again.</p>}
     </div>
   );
@@ -789,7 +896,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-green">Score: {score}</p>
-          <p className="text-sm text-muted">Soft drop with ↓, rotate with ↑, and lock cleanly with collision.</p>
+          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
@@ -809,9 +916,9 @@ function TetrisGame({ onScoreChange }: GameProps) {
         </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-background/60 p-3">
+        <div className="min-w-0 rounded-2xl border border-border bg-background/60 p-2 sm:p-3">
           <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Next piece</p>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="mx-auto grid w-16 max-w-full grid-cols-4 gap-1 sm:w-20">
             {nextPiece.shape.flat().map((cell, index) => (
               <div
                 key={`preview-${index}`}
@@ -822,7 +929,164 @@ function TetrisGame({ onScoreChange }: GameProps) {
         </div>
       </div>
 
+      <TouchController rotate />
       {gameOver && <p className="font-mono text-sm text-accent-purple">Game over — stack another run.</p>}
+    </div>
+  );
+}
+
+function Game2048({ onScoreChange }: GameProps) {
+  const [board, setBoard] = useState(create2048Board);
+  const [score, setScore] = useState(0);
+  const [won, setWon] = useState(false);
+
+  useEffect(() => {
+    onScoreChange(score);
+  }, [onScoreChange, score]);
+
+  const move = useCallback((direction: "up" | "down" | "left" | "right") => {
+    setBoard((current) => {
+      const result = move2048Board(current, direction);
+      if (result.changed) setScore((previous) => previous + result.gained);
+      if (result.board.flat().some((value) => value >= 2048)) setWon(true);
+      return result.board;
+    });
+  }, []);
+
+  useEffect(() => {
+    const directions: Record<string, "up" | "down" | "left" | "right"> = {
+      ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const direction = directions[event.key];
+      if (!direction) return;
+      event.preventDefault();
+      event.stopPropagation();
+      move(direction);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [move]);
+
+  const reset = () => {
+    setBoard(create2048Board());
+    setScore(0);
+    setWon(false);
+  };
+
+  const tileColors: Record<number, string> = {
+    2: "border-slate-600 bg-slate-800 text-slate-100",
+    4: "border-accent-cyan/40 bg-accent-cyan/15 text-accent-cyan",
+    8: "border-accent-green/40 bg-accent-green/15 text-accent-green",
+    16: "border-amber-300/50 bg-amber-300/15 text-amber-200",
+    32: "border-orange-400/50 bg-orange-400/15 text-orange-200",
+    64: "border-rose-400/50 bg-rose-400/15 text-rose-200",
+    128: "border-accent-purple/50 bg-accent-purple/20 text-accent-purple",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-cyan/20 bg-background/60 px-4 py-3">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Merge protocol</p>
+          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="font-mono text-sm text-accent-green">score {String(score).padStart(5, "0")}</p>
+          <button type="button" onClick={reset} className="rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted transition hover:border-accent-cyan/50 hover:text-accent-cyan">New run</button>
+        </div>
+      </div>
+      <div className="mx-auto w-full max-w-md rounded-2xl border border-accent-cyan/25 bg-[radial-gradient(circle_at_top,rgba(88,166,255,0.17),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(88,166,255,0.12)] sm:p-5">
+        <div className="grid grid-cols-4 gap-2 rounded-xl border border-border/70 bg-[#060b12]/90 p-2 sm:gap-3 sm:p-3">
+          {board.flat().map((tile, index) => (
+            <div key={`${tile}-${index}`} className={`flex aspect-square items-center justify-center rounded-lg border font-mono text-xl font-bold shadow-[inset_0_0_14px_rgba(255,255,255,0.03)] transition ${tile ? tileColors[tile] ?? "border-accent-purple bg-accent-purple/35 text-white shadow-[0_0_18px_rgba(188,140,255,0.4)]" : "border-border/40 bg-slate-950/80 text-transparent"}`}>
+              {tile || "0"}
+            </div>
+          ))}
+        </div>
+      </div>
+      <TouchController />
+      {won && <p className="font-mono text-sm text-accent-green">2048 reached — merge protocol complete.</p>}
+    </div>
+  );
+}
+
+function MinesweeperGame({ onScoreChange }: GameProps) {
+  const [cells, setCells] = useState<MineCell[]>(createMinefield);
+  const [status, setStatus] = useState("Scan the grid. Right-click a cell to flag it.");
+  const [gameOver, setGameOver] = useState(false);
+  const revealed = cells.filter((cell) => cell.revealed && !cell.mine).length;
+  const flags = cells.filter((cell) => cell.flagged).length;
+
+  useEffect(() => {
+    onScoreChange(revealed * 10);
+  }, [onScoreChange, revealed]);
+
+  const reset = () => {
+    setCells(createMinefield());
+    setGameOver(false);
+    setStatus("New field deployed. Find every safe cell.");
+  };
+
+  const reveal = (startIndex: number) => {
+    if (gameOver || cells[startIndex].flagged || cells[startIndex].revealed) return;
+    if (cells[startIndex].mine) {
+      setCells((current) => current.map((cell) => cell.mine ? { ...cell, revealed: true } : cell));
+      setGameOver(true);
+      setStatus("Mine triggered — mission aborted.");
+      return;
+    }
+    setCells((current) => {
+      const next = current.map((cell) => ({ ...cell }));
+      const queue = [startIndex];
+      while (queue.length) {
+        const index = queue.shift()!;
+        if (next[index].revealed || next[index].flagged) continue;
+        next[index].revealed = true;
+        if (next[index].adjacent !== 0) continue;
+        const row = Math.floor(index / MINESWEEPER_SIZE);
+        const col = index % MINESWEEPER_SIZE;
+        for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) for (let colOffset = -1; colOffset <= 1; colOffset += 1) {
+          const nextRow = row + rowOffset;
+          const nextCol = col + colOffset;
+          if (nextRow >= 0 && nextRow < MINESWEEPER_SIZE && nextCol >= 0 && nextCol < MINESWEEPER_SIZE) queue.push(nextRow * MINESWEEPER_SIZE + nextCol);
+        }
+      }
+      return next;
+    });
+  };
+
+  const flag = (index: number) => {
+    if (gameOver || cells[index].revealed) return;
+    setCells((current) => current.map((cell, cellIndex) => cellIndex === index ? { ...cell, flagged: !cell.flagged } : cell));
+  };
+
+  const cleared = revealed === MINESWEEPER_SIZE * MINESWEEPER_SIZE - MINESWEEPER_MINES;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-400/25 bg-background/60 px-4 py-3">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-rose-300">Threat scanner</p>
+          <p className="text-sm text-muted">{status}</p>
+        </div>
+        <button type="button" onClick={reset} className="rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted transition hover:border-rose-400/50 hover:text-rose-200">New field</button>
+      </div>
+      <div className="grid grid-cols-3 gap-3 font-mono text-xs">
+        <div className="rounded-lg border border-border bg-background/60 p-3 text-muted">Safe <span className="float-right text-accent-green">{revealed}</span></div>
+        <div className="rounded-lg border border-border bg-background/60 p-3 text-muted">Flags <span className="float-right text-amber-200">{flags}/{MINESWEEPER_MINES}</span></div>
+        <div className="rounded-lg border border-border bg-background/60 p-3 text-muted">Status <span className={`float-right ${gameOver ? "text-rose-300" : cleared ? "text-accent-green" : "text-accent-cyan"}`}>{gameOver ? "LOST" : cleared ? "CLEAR" : "LIVE"}</span></div>
+      </div>
+      <div className="mx-auto w-full max-w-lg rounded-2xl border border-rose-400/25 bg-[radial-gradient(circle_at_top,rgba(251,113,133,0.15),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(251,113,133,0.1)] sm:p-5">
+        <div className="grid grid-cols-8 gap-1 rounded-xl border border-border/70 bg-[#060b12]/90 p-2 sm:gap-1.5 sm:p-3">
+          {cells.map((cell, index) => (
+            <button key={index} type="button" onClick={() => reveal(index)} onContextMenu={(event) => { event.preventDefault(); flag(index); }} className={`aspect-square rounded-[4px] border font-mono text-xs font-bold transition ${cell.revealed ? cell.mine ? "border-rose-400/70 bg-rose-500/25 text-rose-200" : "border-slate-700 bg-slate-900 text-accent-cyan" : cell.flagged ? "border-amber-300/50 bg-amber-300/15 text-amber-200" : "border-border bg-slate-800 text-transparent hover:border-accent-cyan/60 hover:bg-slate-700"}`}>
+              {cell.revealed ? cell.mine ? "✕" : cell.adjacent || "·" : cell.flagged ? "⚑" : "·"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {cleared && <p className="font-mono text-sm text-accent-green">Field cleared — no threats remain.</p>}
     </div>
   );
 }
@@ -957,37 +1221,90 @@ function PacmanGame({ onScoreChange }: GameProps) {
     return grid;
   }, [ghost, pellets, player]);
 
+  const pelletsRemaining = pellets.flat().filter(Boolean).length;
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-purple">Score: {score}</p>
-          <p className="text-sm text-muted">Collect pellets and avoid the ghost.</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-purple/20 bg-background/60 px-4 py-3 shadow-[inset_0_0_24px_rgba(188,140,255,0.04)]">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent-green/30 bg-accent-green/10 font-mono text-sm text-accent-green shadow-[0_0_18px_rgba(63,185,80,0.13)]">
+            &gt;_
+          </span>
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-purple">Pacman.exe</p>
+            <p className="text-sm text-muted">Clear the grid. Stay ahead of the sentinel.</p>
+          </div>
         </div>
-        <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
+        <button
+          type="button"
+          onClick={reset}
+          className="rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted transition hover:border-accent-cyan/50 hover:text-accent-cyan"
+        >
+          Reset run
+        </button>
       </div>
-      <div className="relative overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:14px_14px] opacity-50" />
-        <div className="relative grid grid-cols-10 gap-1">
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">Score</p>
+          <p className="font-mono text-lg font-semibold text-accent-cyan">{String(score).padStart(4, "0")}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">Pellets left</p>
+          <p className="font-mono text-lg font-semibold text-accent-green">{String(pelletsRemaining).padStart(2, "0")}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-background/60 px-3 py-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">System</p>
+          <p className={`font-mono text-sm font-semibold ${gameOver ? "text-rose-300" : "text-accent-purple"}`}>
+            {gameOver ? "CAUGHT" : "RUNNING"}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-2xl border border-accent-purple/30 bg-[radial-gradient(circle_at_top,rgba(188,140,255,0.18),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(188,140,255,0.1),inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:p-5">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(88,166,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(88,166,255,0.035)_1px,transparent_1px)] bg-[size:18px_18px]" />
+        <div className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-accent-cyan/70 to-transparent" />
+        <div className="relative rounded-xl border border-accent-cyan/15 bg-[#060b12]/85 p-2 shadow-[inset_0_0_30px_rgba(88,166,255,0.06)] sm:p-3">
+          <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
           {renderGrid.flat().map((cell, index) => (
             <div
               key={`${cell}-${index}`}
-              className={`aspect-square rounded-full ${
+              className={`relative aspect-square overflow-hidden ${
                 cell === "wall"
-                  ? "bg-slate-800 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+                  ? "rounded-[3px] border border-accent-purple/35 bg-gradient-to-br from-slate-700 to-slate-900 shadow-[inset_0_0_10px_rgba(188,140,255,0.16)]"
                   : cell === "pellet"
-                    ? "bg-accent-cyan shadow-[0_0_12px_rgba(34,211,238,0.7)]"
+                    ? "flex items-center justify-center"
                     : cell === "player"
-                      ? "bg-gradient-to-br from-lime-300 to-emerald-500 shadow-[0_0_16px_rgba(74,222,128,0.8)]"
+                      ? "rounded-full bg-amber-300 [clip-path:polygon(0_0,100%_50%,0_100%,28%_50%)] shadow-[0_0_16px_rgba(251,191,36,0.9)]"
                       : cell === "ghost"
-                        ? "bg-gradient-to-br from-rose-400 to-pink-600 shadow-[0_0_18px_rgba(251,113,133,0.95)]"
-                        : "bg-slate-950/90"
+                        ? "rounded-t-full rounded-b-[35%] bg-gradient-to-b from-rose-300 to-rose-600 shadow-[0_0_18px_rgba(251,113,133,0.9)]"
+                        : "rounded-[2px] bg-slate-950/70"
               }`}
-            />
+            >
+              {cell === "pellet" && <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan shadow-[0_0_10px_rgba(88,166,255,1)] sm:h-2 sm:w-2" />}
+              {cell === "ghost" && (
+                <span className="absolute inset-x-[22%] top-[28%] flex justify-between">
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-950 sm:h-2 sm:w-2" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-950 sm:h-2 sm:w-2" />
+                </span>
+              )}
+            </div>
           ))}
+          </div>
         </div>
+        {gameOver && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/65 p-6 backdrop-blur-[2px]">
+            <div className="rounded-xl border border-rose-400/40 bg-surface/95 px-6 py-5 text-center shadow-[0_0_30px_rgba(251,113,133,0.2)]">
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-rose-300">Run terminated</p>
+              <p className="mt-2 text-sm text-muted">The sentinel caught you.</p>
+              <button type="button" onClick={reset} className="mt-4 rounded-md bg-rose-400/15 px-4 py-2 font-mono text-xs uppercase tracking-wider text-rose-200 transition hover:bg-rose-400/25">
+                Restart
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      {gameOver && <p className="font-mono text-sm text-accent-purple">Caught by the ghost — try another round.</p>}
+      <p className="font-mono text-xs text-muted">Use your arrow keys to navigate the maze.</p>
     </div>
   );
 }
@@ -1069,7 +1386,7 @@ function MazeGame({ onScoreChange }: GameProps) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-rose-300">Score: {score}</p>
-          <p className="text-sm text-muted">Use arrow keys to navigate the maze.</p>
+          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
@@ -1094,6 +1411,7 @@ function MazeGame({ onScoreChange }: GameProps) {
         </div>
       </div>
 
+      <TouchController />
       <p className="font-mono text-sm text-accent-purple">{status}</p>
     </div>
   );
@@ -1295,7 +1613,7 @@ export function Games() {
     const handleOpenGame = (event: Event) => {
       const customEvent = event as CustomEvent<{ gameId?: string }>;
       const gameId = customEvent.detail?.gameId;
-      if (gameId && (gameId === "snake" || gameId === "tetris" || gameId === "pacman" || gameId === "sudoku" || gameId === "maze")) {
+      if (gameId && (gameId === "snake" || gameId === "tetris" || gameId === "2048" || gameId === "minesweeper" || gameId === "sudoku" || gameId === "maze")) {
         setActiveGame(gameId);
       }
     };
@@ -1311,7 +1629,6 @@ export function Games() {
           id="games"
           number="04. games"
           title="Mini-game lab"
-          subtitle="Playable arcade experiments built into the portfolio. Each game keeps its own local leaderboard."
         />
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
