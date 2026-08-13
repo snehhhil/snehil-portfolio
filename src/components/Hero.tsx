@@ -104,7 +104,7 @@ export function Hero() {
         }
         return current + 1;
       });
-    }, 100);
+    }, 50);
     return () => {
       window.clearInterval(timer);
       if (readyTimer) window.clearTimeout(readyTimer);
@@ -129,7 +129,7 @@ export function Hero() {
   if (bootPhase !== "ready") {
     return (
       <section
-        className="relative flex h-screen w-full cursor-pointer items-center justify-start overflow-hidden bg-black px-6 py-16 text-zinc-300"
+        className="fixed inset-0 z-[100] flex h-screen w-full cursor-pointer items-center justify-start overflow-hidden bg-black px-6 py-16 text-zinc-300"
         aria-live="polite"
         onClick={() => bootPhase === "prompt" && setBootPhase("initializing")}
       >

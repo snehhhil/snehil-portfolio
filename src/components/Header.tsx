@@ -28,10 +28,10 @@ export function Header() {
 
   return isInitialized ? (
     <header
-      className={`fixed inset-x-0 top-0 z-[80] transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-[110] border-b border-border bg-background transition-all duration-300 ${
         scrolled
-          ? "bg-background/80 backdrop-blur-xl" //border-b border-border 
-          : "bg-transparent"
+          ? "shadow-lg"
+          : "shadow-sm"
       }`}
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">

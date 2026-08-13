@@ -34,6 +34,7 @@ type PieceState = {
 
 type GameProps = {
   onScoreChange: (score: number) => void;
+  isPaused?: boolean;
 };
 
 type MineCell = {
@@ -42,6 +43,10 @@ type MineCell = {
   flagged: boolean;
   adjacent: number;
 };
+
+function signalGameOver() {
+  window.dispatchEvent(new Event("snhl-game-over"));
+}
 
 const GAME_CATALOG: Array<{ id: GameId; title: string; subtitle: string; accent: string }> = [
   {
@@ -81,6 +86,15 @@ const GAME_CATALOG: Array<{ id: GameId; title: string; subtitle: string; accent:
     accent: "text-rose-300",
   },
 ];
+
+const NEW_CONTROL_GUIDES: Record<GameId, { desktop: string; touch: string }> = {
+  snake: { desktop: "Arrow keys steer", touch: "Swipe anywhere to steer" },
+  tetris: { desktop: "← → move · ↓ drop · ↑ rotate", touch: "Swipe to move/drop · tap to rotate" },
+  "2048": { desktop: "Arrow keys move tiles", touch: "Swipe anywhere to merge" },
+  minesweeper: { desktop: "Click reveal · right-click flag", touch: "Tap reveal · long-press flag" },
+  sudoku: { desktop: "Select a cell · use number keys", touch: "Tap a cell · use the number pad" },
+  maze: { desktop: "Arrow keys navigate", touch: "Swipe anywhere to move" },
+};
 
 const STORAGE_PREFIX = "snehil-portfolio-game-leaderboard";
 const BOARD_SIZE = 12;
@@ -515,38 +529,14 @@ function Leaderboard({ gameId, score }: { gameId: GameId; score?: number }) {
   );
 }
 
-const CONTROL_GUIDES: Record<GameId, { desktop: string; touch: string }> = {
-  snake: {
-    desktop: "Use the Arrow keys to steer the snake.",
-    touch: "Swipe up, down, left, or right to steer.",
-  },
-  tetris: {
-    desktop: "Use ← → to move, ↓ to drop, and ↑ to rotate.",
-    touch: "Swipe left/right to move, swipe down to drop, or tap to rotate.",
-  },
-  "2048": {
-    desktop: "Use the Arrow keys to move and merge tiles.",
-    touch: "Swipe in any direction to move and merge tiles.",
-  },
-  minesweeper: {
-    desktop: "Click to reveal cells and right-click to flag mines.",
-    touch: "Tap to reveal cells and long-press to flag mines.",
-  },
-  sudoku: {
-    desktop: "Click a cell, then use number keys or the input pad.",
-    touch: "Tap a cell, then tap a number from the input pad.",
-  },
-  maze: {
-    desktop: "Use the Arrow keys to navigate the maze.",
-    touch: "Swipe in the direction you want to move.",
-  },
-};
-
 function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [latestScore, setLatestScore] = useState<number | undefined>(undefined);
+  const [isStarted, setIsStarted] = useState(true);
   const [showControlGuide, setShowControlGuide] = useState(true);
+  const [runKey, setRunKey] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
   const globalSwipeStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -579,7 +569,7 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
 
   useEffect(() => {
     const directionalGames: GameId[] = ["snake", "tetris", "2048", "maze"];
-    if (!directionalGames.includes(gameId)) return;
+    if (!directionalGames.includes(gameId) || showControlGuide) return;
 
     const dispatchDirection = (key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
@@ -618,7 +608,19 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerCancel);
     };
-  }, [gameId]);
+  }, [gameId, showControlGuide]);
+
+  useEffect(() => {
+    const handleGameOver = () => setGameOver(true);
+    window.addEventListener("snhl-game-over", handleGameOver);
+    return () => window.removeEventListener("snhl-game-over", handleGameOver);
+  }, []);
+
+  const restartGame = () => {
+    setGameOver(false);
+    setIsStarted(true);
+    setRunKey((current) => current + 1);
+  };
 
   async function toggleFullscreen() {
     if (!containerRef.current) return;
@@ -644,23 +646,25 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   }, []);
 
   const gameContent = useMemo(() => {
+    if (!isStarted) return null;
+
     switch (gameId) {
       case "snake":
-        return <SnakeGame onScoreChange={setLatestScore} />;
+        return <SnakeGame key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       case "tetris":
-        return <TetrisGame onScoreChange={setLatestScore} />;
+        return <TetrisGame key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       case "2048":
-        return <Game2048 onScoreChange={setLatestScore} />;
+        return <Game2048 key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       case "minesweeper":
-        return <MinesweeperGame onScoreChange={setLatestScore} />;
+        return <MinesweeperGame key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       case "sudoku":
-        return <SudokuGame onScoreChange={setLatestScore} />;
+        return <SudokuGame key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       case "maze":
-        return <MazeGame onScoreChange={setLatestScore} />;
+        return <MazeGame key={runKey} onScoreChange={setLatestScore} isPaused={showControlGuide} />;
       default:
         return null;
     }
-  }, [gameId]);
+  }, [gameId, isStarted, runKey, showControlGuide]);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-background/90 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
@@ -669,7 +673,7 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:gap-4 sm:p-4"
+        className="game-shell relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-3 overflow-visible rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:gap-4 sm:p-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -693,27 +697,49 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
         </div>
 
         <div className="grid min-w-0 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-2 shadow-inner shadow-black/10 sm:p-3">{gameContent}</div>
+          <div className="game-content min-w-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-2 shadow-inner shadow-black/10 sm:p-3">{gameContent}</div>
           <div className="hidden lg:block">
             <Leaderboard gameId={gameId} score={latestScore} />
           </div>
         </div>
 
         {showControlGuide && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-accent-cyan/30 bg-surface p-5 shadow-[0_0_35px_rgba(88,166,255,0.18)] sm:p-6">
-              <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent-cyan">Control guide</p>
-              <h4 className="mt-2 text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h4>
-              <div className="mt-5 space-y-3 font-mono text-sm text-muted">
-                <p><span className="text-accent-green">Desktop / laptop:</span> {CONTROL_GUIDES[gameId].desktop}</p>
-                <p><span className="text-accent-green">Phone / tablet:</span> {CONTROL_GUIDES[gameId].touch}</p>
+          <div className="game-over-overlay absolute -inset-px z-30 flex items-center justify-center rounded-2xl border border-border bg-background/80 p-4 backdrop-blur-md">
+            <div className="control-guide-card relative w-full max-w-sm rounded-2xl border border-accent-cyan/30 bg-[#0b1018] p-6 font-mono shadow-xl">
+              <div className="mb-5 flex items-center gap-2 border-b border-border pb-3 text-xs text-muted">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                <span className="ml-1">control-protocol.sh</span>
               </div>
+              <p className="text-xs uppercase tracking-[0.22em] text-accent-cyan">{GAME_CATALOG.find((item) => item.id === gameId)?.title} · input map</p>
+              <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
+                <p><span className="text-accent-green">desktop:</span> {NEW_CONTROL_GUIDES[gameId].desktop}</p>
+                <p><span className="text-accent-green">touch:</span> {NEW_CONTROL_GUIDES[gameId].touch}</p>
+              </div>
+              <button type="button" onClick={() => setShowControlGuide(false)} className="mt-6 w-full rounded-md border border-accent-cyan/50 bg-accent-cyan/10 px-4 py-2.5 text-sm text-accent-cyan transition hover:bg-accent-cyan/20">
+                $ start {gameId}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameOver && (
+          <div className="game-over-overlay absolute inset-0 z-20 flex items-center justify-center bg-background/75 p-4 backdrop-blur-sm">
+            <div className="game-over-card relative w-full max-w-sm rounded-2xl border border-rose-400/40 bg-surface/95 p-6 text-center shadow-[0_0_45px_rgba(251,113,133,0.25)]">
               <button
                 type="button"
-                onClick={() => setShowControlGuide(false)}
-                className="mt-6 w-full rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-4 py-2.5 font-mono text-sm text-accent-cyan transition hover:bg-accent-cyan/20"
+                aria-label="Close game over message"
+                onClick={() => setGameOver(false)}
+                className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full border border-rose-400/50 bg-rose-400/10 font-mono text-sm text-rose-200 transition hover:bg-rose-400/25"
               >
-                Got it!
+                ×
+              </button>
+              <p className="font-mono text-xs uppercase tracking-[0.28em] text-rose-300">Run terminated</p>
+              <h4 className="mt-2 text-2xl font-semibold text-foreground">Game over</h4>
+              <p className="mt-2 text-sm text-muted">Your run has ended. Ready for another attempt?</p>
+              <button type="button" onClick={restartGame} className="mt-5 rounded-lg border border-rose-400/50 bg-rose-400/10 px-5 py-2.5 font-mono text-sm text-rose-200 transition hover:bg-rose-400/20">
+                Restart game
               </button>
             </div>
           </div>
@@ -723,7 +749,7 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   );
 }
 
-function SnakeGame({ onScoreChange }: GameProps) {
+function SnakeGame({ onScoreChange, isPaused = false }: GameProps) {
   const [snake, setSnake] = useState<SnakePoint[]>([
     { x: 5, y: 6 },
     { x: 4, y: 6 },
@@ -740,6 +766,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isPaused) return;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
         event.preventDefault();
         event.stopPropagation();
@@ -753,10 +780,10 @@ function SnakeGame({ onScoreChange }: GameProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [direction]);
+  }, [direction, isPaused]);
 
   useEffect(() => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
 
     const speed = Math.max(90, 190 - Math.floor(score / 20) * 10);
 
@@ -770,6 +797,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
 
         if (hitsWall || hitsSelf) {
           setGameOver(true);
+          signalGameOver();
           return currentSnake;
         }
 
@@ -787,7 +815,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
     }, speed);
 
     return () => window.clearInterval(timer);
-  }, [direction, food, gameOver, score]);
+  }, [direction, food, gameOver, isPaused, score]);
 
   const cells = useMemo(() => {
     const grid = Array.from({ length: BOARD_SIZE }, () => Array.from({ length: BOARD_SIZE }, () => ""));
@@ -845,7 +873,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
   );
 }
 
-function TetrisGame({ onScoreChange }: GameProps) {
+function TetrisGame({ onScoreChange, isPaused = false }: GameProps) {
   const [board, setBoard] = useState<number[][]>(() =>
     Array.from({ length: TETRIS_ROWS }, () => Array.from({ length: TETRIS_COLS }, () => 0))
   );
@@ -912,6 +940,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
 
     if (!canPlace(nextState, remaining)) {
       setGameOver(true);
+      signalGameOver();
       return;
     }
 
@@ -920,7 +949,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!piece || gameOver) return;
+      if (!piece || gameOver || isPaused) return;
 
       if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp"].includes(event.key)) {
         event.preventDefault();
@@ -952,10 +981,10 @@ function TetrisGame({ onScoreChange }: GameProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board, canPlace, gameOver, nextPiece, piece]);
+  }, [board, canPlace, gameOver, isPaused, nextPiece, piece]);
 
   useEffect(() => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
 
     const speed = Math.max(150, 470 - Math.floor(score / 100) * 24);
 
@@ -974,7 +1003,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
     }, speed);
 
     return () => window.clearInterval(timer);
-  }, [board, canPlace, gameOver, nextPiece, piece, score]);
+  }, [board, canPlace, gameOver, isPaused, nextPiece, piece, score]);
 
   const renderBoard = useMemo(() => {
     const boardWithPiece = cloneBoard(board);
@@ -1049,7 +1078,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
   );
 }
 
-function Game2048({ onScoreChange }: GameProps) {
+function Game2048({ onScoreChange, isPaused = false }: GameProps) {
   const [board, setBoard] = useState(create2048Board);
   const [score, setScore] = useState(0);
   const [won, setWon] = useState(false);
@@ -1072,6 +1101,7 @@ function Game2048({ onScoreChange }: GameProps) {
       ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
     };
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isPaused) return;
       const direction = directions[event.key];
       if (!direction) return;
       event.preventDefault();
@@ -1080,7 +1110,7 @@ function Game2048({ onScoreChange }: GameProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [move]);
+  }, [isPaused, move]);
 
   const reset = () => {
     setBoard(create2048Board());
@@ -1147,6 +1177,7 @@ function MinesweeperGame({ onScoreChange }: GameProps) {
     if (cells[startIndex].mine) {
       setCells((current) => current.map((cell) => cell.mine ? { ...cell, revealed: true } : cell));
       setGameOver(true);
+      signalGameOver();
       setStatus("Mine triggered — mission aborted.");
       return;
     }
@@ -1293,6 +1324,7 @@ function PacmanGame({ onScoreChange }: GameProps) {
   useEffect(() => {
     if (player.x === ghost.x && player.y === ghost.y) {
       setGameOver(true);
+      signalGameOver();
     }
   }, [ghost, player]);
 
@@ -1425,7 +1457,7 @@ function PacmanGame({ onScoreChange }: GameProps) {
   );
 }
 
-function MazeGame({ onScoreChange }: GameProps) {
+function MazeGame({ onScoreChange, isPaused = false }: GameProps) {
   const [mazeLayout, setMazeLayout] = useState<string[]>(() => createMazeLayout());
   const [player, setPlayer] = useState({ x: 1, y: 1 });
   const [score, setScore] = useState(0);
@@ -1437,6 +1469,7 @@ function MazeGame({ onScoreChange }: GameProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isPaused) return;
       const directionMap: Record<string, { x: number; y: number }> = {
         ArrowUp: { x: 0, y: -1 },
         ArrowDown: { x: 0, y: 1 },
@@ -1472,7 +1505,7 @@ function MazeGame({ onScoreChange }: GameProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mazeLayout]);
+  }, [isPaused, mazeLayout]);
 
   const reset = () => {
     setMazeLayout(createMazeLayout());
@@ -1533,7 +1566,7 @@ function MazeGame({ onScoreChange }: GameProps) {
   );
 }
 
-function SudokuGame({ onScoreChange }: GameProps) {
+function SudokuGame({ onScoreChange, isPaused = false }: GameProps) {
   const initialPuzzleRef = useRef(createSudokuPuzzle());
   const [sudokuState, setSudokuState] = useState(() => ({
     puzzleBoard: initialPuzzleRef.current,
@@ -1554,6 +1587,7 @@ function SudokuGame({ onScoreChange }: GameProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isPaused) return;
       const key = event.key;
 
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Spacebar"].includes(key)) {
@@ -1589,7 +1623,7 @@ function SudokuGame({ onScoreChange }: GameProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board, selected]);
+  }, [board, isPaused, selected]);
 
   const reset = () => {
     const nextPuzzle = createSudokuPuzzle();

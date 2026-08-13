@@ -21,7 +21,7 @@ const INITIAL_LINES: TerminalLine[] = [
   //   type: "output",
   //   text: "FinTech platforms · React & Java · ML & CV experiments",
   // },
-  { type: "hint", text: "Type help for available commands" },
+  { type: "hint", text: "Type 'snhl help' for available commands" },
 ];
 
 const COMMAND_ALIASES: Record<string, string[]> = {

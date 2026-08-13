@@ -9,7 +9,7 @@ export function Education() {
         <SectionHeading
           id="education"
           number="04. education"
-          title="Education"
+          title="My academic journey"
         />
 
         <div className="grid gap-6 grid-cols-1">
