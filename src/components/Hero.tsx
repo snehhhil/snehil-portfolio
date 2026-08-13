@@ -5,7 +5,7 @@ import { Mail } from "lucide-react";
 import { profile } from "@/data/portfolio";
 import { GithubIcon, InstagramIcon, LinkedinIcon } from "./SocialIcons";
 import { Terminal } from "./Terminal";
-import { TaskbarHint } from "./TaskbarHint";
+// import { TaskbarHint } from "./TaskbarHint";
 import { ResumeButton } from "./ResumeButton";
 import { useTerminal } from "./TerminalProvider";
 
