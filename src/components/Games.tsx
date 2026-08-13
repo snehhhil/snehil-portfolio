@@ -680,19 +680,30 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
             <h3 className="text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h3>
           </div>
           <div className="flex max-w-full flex-wrap gap-2">
-            <button
+            {/* <button
               type="button"
               onClick={toggleFullscreen}
               className="hidden rounded-md border border-border bg-background px-3 py-2 text-sm text-muted transition hover:text-foreground lg:inline-flex"
             >
               {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-            </button>
+            </button> */}
             <button
               type="button"
               aria-label="Close game"
               onClick={onClose}
               className="h-3 w-3 rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
             />
+            <button
+
+  type="button"
+
+  aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+
+  onClick={toggleFullscreen}
+
+  className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
+
+/>
           </div>
         </div>
 
