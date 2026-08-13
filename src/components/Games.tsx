@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SectionHeading } from "./SectionHeading";
 
 type GameId = "snake" | "tetris" | "2048" | "minesweeper" | "sudoku" | "maze";
@@ -440,19 +440,41 @@ function GameCard({ game, onOpen }: { game: (typeof GAME_CATALOG)[number]; onOpe
   );
 }
 
-function TouchController({ rotate = false }: { rotate?: boolean }) {
-  const press = (key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
+function SwipeSurface({ children, onTap }: { children: ReactNode; onTap?: () => void }) {
+  const startPoint = useRef<{ x: number; y: number } | null>(null);
+
+  const dispatchDirection = (key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
     window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
   };
 
   return (
-    <div className="touch-controller mx-auto w-full max-w-[17rem] grid-cols-3 grid-rows-2 gap-2 rounded-xl border border-border bg-background/70 p-3 shadow-inner shadow-black/20">
-      <button type="button" aria-label={rotate ? "Rotate piece" : "Move up"} onClick={() => press("ArrowUp")} className="col-start-2 row-start-1 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-accent-cyan transition active:scale-95 active:border-accent-cyan/70">
-        ↑
-      </button>
-      <button type="button" aria-label="Move left" onClick={() => press("ArrowLeft")} className="col-start-1 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">←</button>
-      <button type="button" aria-label="Move down" onClick={() => press("ArrowDown")} className="col-start-2 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">↓</button>
-      <button type="button" aria-label="Move right" onClick={() => press("ArrowRight")} className="col-start-3 row-start-2 aspect-square w-full rounded-lg border border-border bg-surface font-mono text-xl text-muted transition active:scale-95 active:border-accent-cyan/70">→</button>
+    <div
+      className="touch-pan-y select-none"
+      onPointerDown={(event) => {
+        startPoint.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerUp={(event) => {
+        if (!startPoint.current) return;
+        const deltaX = event.clientX - startPoint.current.x;
+        const deltaY = event.clientY - startPoint.current.y;
+        startPoint.current = null;
+
+        if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 24) {
+          onTap?.();
+          return;
+        }
+
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          dispatchDirection(deltaX > 0 ? "ArrowRight" : "ArrowLeft");
+        } else {
+          dispatchDirection(deltaY > 0 ? "ArrowDown" : "ArrowUp");
+        }
+      }}
+      onPointerCancel={() => {
+        startPoint.current = null;
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -492,10 +514,38 @@ function Leaderboard({ gameId, score }: { gameId: GameId; score?: number }) {
   );
 }
 
+const CONTROL_GUIDES: Record<GameId, { desktop: string; touch: string }> = {
+  snake: {
+    desktop: "Use the Arrow keys to steer the snake.",
+    touch: "Swipe up, down, left, or right to steer.",
+  },
+  tetris: {
+    desktop: "Use ← → to move, ↓ to drop, and ↑ to rotate.",
+    touch: "Swipe left/right to move, swipe down to drop, or tap to rotate.",
+  },
+  "2048": {
+    desktop: "Use the Arrow keys to move and merge tiles.",
+    touch: "Swipe in any direction to move and merge tiles.",
+  },
+  minesweeper: {
+    desktop: "Click to reveal cells and right-click to flag mines.",
+    touch: "Tap to reveal cells and long-press to flag mines.",
+  },
+  sudoku: {
+    desktop: "Click a cell, then use number keys or the input pad.",
+    touch: "Tap a cell, then tap a number from the input pad.",
+  },
+  maze: {
+    desktop: "Use the Arrow keys to navigate the maze.",
+    touch: "Swipe in the direction you want to move.",
+  },
+};
+
 function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [latestScore, setLatestScore] = useState<number | undefined>(undefined);
+  const [showControlGuide, setShowControlGuide] = useState(true);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -574,35 +624,55 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:p-4"
+        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-3 overflow-hidden rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:gap-4 sm:p-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">{gameId}</p>
             <h3 className="text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h3>
           </div>
           <div className="flex max-w-full flex-wrap gap-2">
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-muted transition hover:text-foreground"
+              className="hidden rounded-md border border-border bg-background px-3 py-2 text-sm text-muted transition hover:text-foreground lg:inline-flex"
             >
               {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             </button>
             <button
               type="button"
+              aria-label="Close game"
               onClick={onClose}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-muted transition hover:text-foreground"
-            >
-              Close
-            </button>
+              className="h-3 w-3 rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
+            />
           </div>
         </div>
 
         <div className="grid min-w-0 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
-          <div className="min-w-0 rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-3 shadow-inner shadow-black/10">{gameContent}</div>
-          <Leaderboard gameId={gameId} score={latestScore} />
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-2 shadow-inner shadow-black/10 sm:p-3">{gameContent}</div>
+          <div className="hidden lg:block">
+            <Leaderboard gameId={gameId} score={latestScore} />
+          </div>
         </div>
+
+        {showControlGuide && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-accent-cyan/30 bg-surface p-5 shadow-[0_0_35px_rgba(88,166,255,0.18)] sm:p-6">
+              <p className="font-mono text-xs uppercase tracking-[0.24em] text-accent-cyan">Control guide</p>
+              <h4 className="mt-2 text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h4>
+              <div className="mt-5 space-y-3 font-mono text-sm text-muted">
+                <p><span className="text-accent-green">Desktop / laptop:</span> {CONTROL_GUIDES[gameId].desktop}</p>
+                <p><span className="text-accent-green">Phone / tablet:</span> {CONTROL_GUIDES[gameId].touch}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowControlGuide(false)}
+                className="mt-6 w-full rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-4 py-2.5 font-mono text-sm text-accent-cyan transition hover:bg-accent-cyan/20"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -697,17 +767,17 @@ function SnakeGame({ onScoreChange }: GameProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 text-xs sm:space-y-3 sm:text-sm">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Score: {score}</p>
-          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent-cyan sm:text-xs">Score: {score}</p>
         </div>
-        <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
+        <button type="button" onClick={reset} className="rounded-md border border-border px-2 py-1 text-xs sm:px-3 sm:py-2 sm:text-sm">Restart</button>
       </div>
-      <div className="relative overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <SwipeSurface>
+      <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-[18px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:rounded-[22px] sm:p-3">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:16px_16px] opacity-40" />
-        <div className="relative grid grid-cols-12 gap-1">
+        <div className="relative grid grid-cols-12 gap-0.5 sm:gap-1">
           {cells.flat().map((cell, index) => (
             <div
               key={`${cell}-${index}`}
@@ -724,7 +794,7 @@ function SnakeGame({ onScoreChange }: GameProps) {
           ))}
         </div>
       </div>
-      <TouchController />
+      </SwipeSurface>
       {gameOver && <p className="font-mono text-sm text-accent-purple">Game over — restart to try again.</p>}
     </div>
   );
@@ -896,13 +966,13 @@ function TetrisGame({ onScoreChange }: GameProps) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-green">Score: {score}</p>
-          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_140px]">
-<div className="relative overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.18),transparent_50%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(3,7,18,0.95))] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <SwipeSurface onTap={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }))}>
+      <div className="grid grid-cols-[minmax(0,1fr)_76px] gap-2 sm:grid-cols-[minmax(0,1fr)_96px] lg:grid-cols-[1fr_140px]">
+<div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.18),transparent_50%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(3,7,18,0.95))] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:p-3">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:12px_12px] opacity-50" />
         <div className="relative grid grid-cols-10 gap-1">
           {renderBoard.flat().map((cell, index) => (
@@ -928,8 +998,7 @@ function TetrisGame({ onScoreChange }: GameProps) {
           </div>
         </div>
       </div>
-
-      <TouchController rotate />
+      </SwipeSurface>
       {gameOver && <p className="font-mono text-sm text-accent-purple">Game over — stack another run.</p>}
     </div>
   );
@@ -985,27 +1054,27 @@ function Game2048({ onScoreChange }: GameProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-cyan/20 bg-background/60 px-4 py-3">
+    <div className="space-y-2 sm:space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent-cyan/20 bg-background/60 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Merge protocol</p>
-          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <div className="flex items-center gap-3">
           <p className="font-mono text-sm text-accent-green">score {String(score).padStart(5, "0")}</p>
           <button type="button" onClick={reset} className="rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted transition hover:border-accent-cyan/50 hover:text-accent-cyan">New run</button>
         </div>
       </div>
-      <div className="mx-auto w-full max-w-md rounded-2xl border border-accent-cyan/25 bg-[radial-gradient(circle_at_top,rgba(88,166,255,0.17),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(88,166,255,0.12)] sm:p-5">
-        <div className="grid grid-cols-4 gap-2 rounded-xl border border-border/70 bg-[#060b12]/90 p-2 sm:gap-3 sm:p-3">
+      <SwipeSurface>
+      <div className="mx-auto w-full max-w-sm rounded-2xl border border-accent-cyan/25 bg-[radial-gradient(circle_at_top,rgba(88,166,255,0.17),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-2 shadow-[0_0_30px_rgba(88,166,255,0.12)] sm:max-w-md sm:p-5">
+        <div className="grid grid-cols-4 gap-1 rounded-xl border border-border/70 bg-[#060b12]/90 p-1 sm:gap-3 sm:p-3">
           {board.flat().map((tile, index) => (
-            <div key={`${tile}-${index}`} className={`flex aspect-square items-center justify-center rounded-lg border font-mono text-xl font-bold shadow-[inset_0_0_14px_rgba(255,255,255,0.03)] transition ${tile ? tileColors[tile] ?? "border-accent-purple bg-accent-purple/35 text-white shadow-[0_0_18px_rgba(188,140,255,0.4)]" : "border-border/40 bg-slate-950/80 text-transparent"}`}>
+            <div key={`${tile}-${index}`} className={`flex aspect-square items-center justify-center rounded-lg border font-mono text-base font-bold shadow-[inset_0_0_14px_rgba(255,255,255,0.03)] transition sm:text-xl ${tile ? tileColors[tile] ?? "border-accent-purple bg-accent-purple/35 text-white shadow-[0_0_18px_rgba(188,140,255,0.4)]" : "border-border/40 bg-slate-950/80 text-transparent"}`}>
               {tile || "0"}
             </div>
           ))}
         </div>
       </div>
-      <TouchController />
+      </SwipeSurface>
       {won && <p className="font-mono text-sm text-accent-green">2048 reached — merge protocol complete.</p>}
     </div>
   );
@@ -1077,7 +1146,7 @@ function MinesweeperGame({ onScoreChange }: GameProps) {
         <div className="rounded-lg border border-border bg-background/60 p-3 text-muted">Flags <span className="float-right text-amber-200">{flags}/{MINESWEEPER_MINES}</span></div>
         <div className="rounded-lg border border-border bg-background/60 p-3 text-muted">Status <span className={`float-right ${gameOver ? "text-rose-300" : cleared ? "text-accent-green" : "text-accent-cyan"}`}>{gameOver ? "LOST" : cleared ? "CLEAR" : "LIVE"}</span></div>
       </div>
-      <div className="mx-auto w-full max-w-lg rounded-2xl border border-rose-400/25 bg-[radial-gradient(circle_at_top,rgba(251,113,133,0.15),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(251,113,133,0.1)] sm:p-5">
+      <div className="mx-auto w-full max-w-sm rounded-2xl border border-rose-400/25 bg-[radial-gradient(circle_at_top,rgba(251,113,133,0.15),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-2 shadow-[0_0_30px_rgba(251,113,133,0.1)] sm:p-3 lg:max-w-lg lg:p-5">
         <div className="grid grid-cols-8 gap-1 rounded-xl border border-border/70 bg-[#060b12]/90 p-2 sm:gap-1.5 sm:p-3">
           {cells.map((cell, index) => (
             <button key={index} type="button" onClick={() => reveal(index)} onContextMenu={(event) => { event.preventDefault(); flag(index); }} className={`aspect-square rounded-[4px] border font-mono text-xs font-bold transition ${cell.revealed ? cell.mine ? "border-rose-400/70 bg-rose-500/25 text-rose-200" : "border-slate-700 bg-slate-900 text-accent-cyan" : cell.flagged ? "border-amber-300/50 bg-amber-300/15 text-amber-200" : "border-border bg-slate-800 text-transparent hover:border-accent-cyan/60 hover:bg-slate-700"}`}>
@@ -1261,7 +1330,8 @@ function PacmanGame({ onScoreChange }: GameProps) {
         </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-accent-purple/30 bg-[radial-gradient(circle_at_top,rgba(188,140,255,0.18),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-3 shadow-[0_0_30px_rgba(188,140,255,0.1),inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:p-5">
+      <SwipeSurface>
+      <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-accent-purple/30 bg-[radial-gradient(circle_at_top,rgba(188,140,255,0.18),transparent_42%),linear-gradient(145deg,rgba(22,27,34,0.98),rgba(7,12,20,0.98))] p-2 shadow-[0_0_30px_rgba(188,140,255,0.1),inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:p-3 lg:p-5">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(88,166,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(88,166,255,0.035)_1px,transparent_1px)] bg-[size:18px_18px]" />
         <div className="pointer-events-none absolute left-5 right-5 top-0 h-px bg-gradient-to-r from-transparent via-accent-cyan/70 to-transparent" />
         <div className="relative rounded-xl border border-accent-cyan/15 bg-[#060b12]/85 p-2 shadow-[inset_0_0_30px_rgba(88,166,255,0.06)] sm:p-3">
@@ -1304,6 +1374,7 @@ function PacmanGame({ onScoreChange }: GameProps) {
           </div>
         )}
       </div>
+      </SwipeSurface>
       <p className="font-mono text-xs text-muted">Use your arrow keys to navigate the maze.</p>
     </div>
   );
@@ -1386,12 +1457,12 @@ function MazeGame({ onScoreChange }: GameProps) {
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-rose-300">Score: {score}</p>
-          <p className="text-sm text-muted">Use arrow keys on desktop or the touch controls on mobile.</p>
         </div>
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
 
-      <div className="relative overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(244,63,94,0.16),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <SwipeSurface>
+      <div className="relative mx-auto w-full max-w-sm overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(244,63,94,0.16),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:p-3">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:14px_14px] opacity-50" />
         <div className="relative grid gap-1" style={{ gridTemplateColumns: `repeat(${mazeLayout[0].length}, minmax(0, 1fr))` }}>
           {renderGrid.map((cell) => (
@@ -1411,7 +1482,7 @@ function MazeGame({ onScoreChange }: GameProps) {
         </div>
       </div>
 
-      <TouchController />
+      </SwipeSurface>
       <p className="font-mono text-sm text-accent-purple">{status}</p>
     </div>
   );
@@ -1544,10 +1615,10 @@ function SudokuGame({ onScoreChange }: GameProps) {
         <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm">Restart</button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_130px]">
-        <div className="relative overflow-hidden rounded-[22px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
+      <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-2 sm:grid-cols-[minmax(0,1fr)_112px] lg:grid-cols-[1fr_130px] lg:gap-4">
+        <div className="relative min-w-0 overflow-hidden rounded-[18px] border border-border/70 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_45%),linear-gradient(180deg,rgba(17,24,39,0.95),rgba(2,6,23,0.95))] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] sm:rounded-[22px] sm:p-3">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:14px_14px] opacity-50" />
-          <div className="relative grid grid-cols-9 gap-1">
+          <div className="relative mx-auto grid w-full max-w-[22rem] grid-cols-9 gap-0.5 sm:gap-1">
             {board.flat().map((cell, index) => {
               const row = Math.floor(index / 9);
               const col = index % 9;
@@ -1560,7 +1631,7 @@ function SudokuGame({ onScoreChange }: GameProps) {
                   key={`${row}-${col}`}
                   type="button"
                   onClick={() => handleCellClick(row, col)}
-                  className={`aspect-square rounded-[5px] border text-sm font-semibold outline-none focus:outline-none focus-visible:outline-none transition-all ${
+                  className={`aspect-square rounded-[5px] border text-xs font-semibold outline-none focus:outline-none focus-visible:outline-none transition-all sm:text-sm ${
                     isLocked
                       ? "border-amber-400/40 bg-amber-300/10 text-amber-100"
                       : isSelected
@@ -1577,15 +1648,15 @@ function SudokuGame({ onScoreChange }: GameProps) {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-background/60 p-3">
-          <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-accent-cyan">Input</p>
-          <div className="grid grid-cols-3 gap-2">
+        <div className="min-w-0 rounded-2xl border border-border bg-background/60 p-2 sm:p-3">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-cyan sm:mb-2 sm:text-xs">Input</p>
+          <div className="grid grid-cols-3 gap-1 sm:gap-2">
             {Array.from({ length: 9 }, (_, index) => index + 1).map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => handleValue(value)}
-                className="rounded-lg border border-border bg-background px-2 py-3 text-sm text-muted transition hover:border-accent-cyan/40 hover:text-foreground"
+                className="rounded-lg border border-border bg-background px-1 py-1.5 text-xs text-muted transition hover:border-accent-cyan/40 hover:text-foreground sm:px-2 sm:py-3 sm:text-sm"
               >
                 {value}
               </button>
@@ -1593,7 +1664,7 @@ function SudokuGame({ onScoreChange }: GameProps) {
             <button
               type="button"
               onClick={() => handleValue(0)}
-              className="col-span-3 rounded-lg border border-border bg-background px-2 py-3 text-sm text-muted transition hover:border-accent-cyan/40 hover:text-foreground"
+              className="col-span-3 rounded-lg border border-border bg-background px-1 py-1.5 text-xs text-muted transition hover:border-accent-cyan/40 hover:text-foreground sm:px-2 sm:py-3 sm:text-sm"
             >
               Clear
             </button>

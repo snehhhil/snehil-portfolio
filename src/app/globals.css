@@ -117,13 +117,3 @@ body::before {
     0 0 32px rgba(188, 140, 255, 0.12),
     inset 0 0 12px rgba(188, 140, 255, 0.06);
 }
-
-.touch-controller {
-  display: none;
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .touch-controller {
-    display: grid;
-  }
-}
