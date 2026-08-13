@@ -36,6 +36,8 @@ export default function Taskbar() {
     };
   }, [isPinned]);
 
+  if (!isInitialized) return null;
+
   const iconMap: Record<string, ReactNode> = {
     about: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-current">
@@ -74,7 +76,7 @@ export default function Taskbar() {
     </button>
   );
 
-  return isInitialized ? (
+  return (
     <div
       className="fixed right-[10px] top-1/2 z-40 -translate-y-1/2"
       onMouseEnter={() => setIsHovered(true)}
@@ -143,5 +145,5 @@ export default function Taskbar() {
         </div>
       </div>
     </div>
-  ) : null;
+  );
 }

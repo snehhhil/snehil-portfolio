@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Snehil — Software Development Engineer",
+  icons: {
+    icon: "/portfolio-favicon.svg",
+  },
   description:
     "Portfolio of Snehil — SDE at Servosys Solutions. Full-stack engineer specializing in React, Java, Javascript",
   keywords: [

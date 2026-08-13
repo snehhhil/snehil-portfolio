@@ -5,7 +5,10 @@ import { Mail } from "lucide-react";
 import { profile } from "@/data/portfolio";
 import { GithubIcon, InstagramIcon, LinkedinIcon } from "./SocialIcons";
 import { Terminal } from "./Terminal";
+<<<<<<< HEAD
 // import { TaskbarHint } from "./TaskbarHint";
+=======
+>>>>>>> b706824 (- edited favicon)
 import { ResumeButton } from "./ResumeButton";
 import { useTerminal } from "./TerminalProvider";
 
@@ -129,13 +132,13 @@ export function Hero() {
         <div className="w-full max-w-4xl max-h-full overflow-hidden px-5 text-left font-mono text-xs leading-7 sm:px-8 sm:text-sm">
           {bootPhase === "prompt" ? (
             <p className="text-green-400">
-              <span className="text-cyan-400">$</span> initialise portfolio.exe
+              <span className="text-cyan-400">$</span> initialise terminal
               <span className="ml-2 text-zinc-500">(press any key or touch the screen)</span>
               <span className="cursor-blink ml-1 text-cyan-400">▋</span>
             </p>
           ) : (
             <div className="space-y-1">
-              <p className="text-green-400"><span className="text-cyan-400">$</span> initialise portfolio.exe</p>
+              <p className="text-green-400"><span className="text-cyan-400">$</span> initialise terminal</p>
               {BOOT_MESSAGES.slice(0, bootStep).map((message, index) => (
                 <p
                   key={message}
@@ -166,7 +169,7 @@ export function Hero() {
     <section className="relative flex min-h-screen items-center px-6 pt-24 pb-16">
       <div className="mx-auto w-full max-w-5xl">
         <p className="animate-[fade-in_400ms_ease-out_both] mb-4 font-mono text-sm text-accent-green">
-          {"portfolio.exe initialized"}
+          {"// portfolio.exe initialized "}
         </p>
 
         <div className="animate-[fade-in_700ms_ease-out_both]">
