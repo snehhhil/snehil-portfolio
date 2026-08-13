@@ -454,6 +454,7 @@ function SwipeSurface({ children, onTap }: { children: ReactNode; onTap?: () => 
         startPoint.current = { x: event.clientX, y: event.clientY };
       }}
       onPointerUp={(event) => {
+        event.stopPropagation();
         if (!startPoint.current) return;
         const deltaX = event.clientX - startPoint.current.x;
         const deltaY = event.clientY - startPoint.current.y;
@@ -546,6 +547,7 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [latestScore, setLatestScore] = useState<number | undefined>(undefined);
   const [showControlGuide, setShowControlGuide] = useState(true);
+  const globalSwipeStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -574,6 +576,49 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
       window.removeEventListener("keydown", handleKeyCapture, true);
     };
   }, []);
+
+  useEffect(() => {
+    const directionalGames: GameId[] = ["snake", "tetris", "2048", "maze"];
+    if (!directionalGames.includes(gameId)) return;
+
+    const dispatchDirection = (key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") return;
+      globalSwipeStart.current = { x: event.clientX, y: event.clientY };
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" || !globalSwipeStart.current) return;
+
+      const deltaX = event.clientX - globalSwipeStart.current.x;
+      const deltaY = event.clientY - globalSwipeStart.current.y;
+      globalSwipeStart.current = null;
+      if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 24) return;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        dispatchDirection(deltaX > 0 ? "ArrowRight" : "ArrowLeft");
+      } else {
+        dispatchDirection(deltaY > 0 ? "ArrowDown" : "ArrowUp");
+      }
+    };
+
+    const handlePointerCancel = () => {
+      globalSwipeStart.current = null;
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerCancel);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerCancel);
+    };
+  }, [gameId]);
 
   async function toggleFullscreen() {
     if (!containerRef.current) return;
