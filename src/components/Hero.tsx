@@ -5,10 +5,7 @@ import { Mail } from "lucide-react";
 import { profile } from "@/data/portfolio";
 import { GithubIcon, InstagramIcon, LinkedinIcon } from "./SocialIcons";
 import { Terminal } from "./Terminal";
-<<<<<<< HEAD
 // import { TaskbarHint } from "./TaskbarHint";
-=======
->>>>>>> b706824 (- edited favicon)
 import { ResumeButton } from "./ResumeButton";
 import { useTerminal } from "./TerminalProvider";
 
