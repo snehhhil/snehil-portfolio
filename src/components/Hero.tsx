@@ -129,7 +129,7 @@ export function Hero() {
   if (bootPhase !== "ready") {
     return (
       <section
-        className="fixed inset-0 z-[100] flex h-screen w-full cursor-pointer items-center justify-start overflow-hidden bg-black px-6 py-16 text-zinc-300"
+        className="fixed inset-0 z-[100] flex h-[100dvh] w-full cursor-pointer items-center justify-start overflow-hidden bg-black px-4 py-12 text-zinc-300 sm:px-6 sm:py-16"
         aria-live="polite"
         onClick={() => bootPhase === "prompt" && setBootPhase("initializing")}
       >
@@ -170,7 +170,7 @@ export function Hero() {
   }
 
   return (
-    <section className="relative flex min-h-screen items-center overflow-hidden px-6 pt-24 pb-16">
+    <section className="relative flex min-h-[100dvh] items-center overflow-hidden px-4 pb-16 pt-24 sm:px-6">
       <div className="relative mx-auto w-full max-w-5xl">
         <p className="animate-[fade-in_400ms_ease-out_both] mb-4 font-mono text-sm text-accent-green">
           {"// portfolio.exe initialized "}

@@ -1,5 +1,4 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SectionHeading } from "./SectionHeading";
 
@@ -667,43 +666,31 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
   }, [gameId, isStarted, runKey, showControlGuide]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-background/90 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-hidden bg-background/90 px-2 py-2 backdrop-blur-sm sm:px-4 sm:py-6">
       <div
         ref={containerRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className="game-shell relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col gap-3 overflow-visible rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:gap-4 sm:p-4"
+        className="game-shell relative flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col gap-3 overflow-y-auto overflow-x-hidden rounded-2xl border border-border bg-surface p-3 shadow-2xl sm:max-h-[92dvh] sm:gap-4 sm:p-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h3>
-          </div>
-          <div className="flex max-w-full flex-wrap gap-2">
-            {/* <button
+        <div className="relative flex flex-wrap items-center justify-between gap-3 pl-10">
+          <div className="absolute left-0 top-1 flex gap-2">
+            <button
               type="button"
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
               onClick={toggleFullscreen}
-              className="hidden rounded-md border border-border bg-background px-3 py-2 text-sm text-muted transition hover:text-foreground lg:inline-flex"
-            >
-              {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-            </button> */}
+              className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
+            />
             <button
               type="button"
               aria-label="Close game"
               onClick={onClose}
               className="h-3 w-3 rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
             />
-            <button
-
-  type="button"
-
-  aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-
-  onClick={toggleFullscreen}
-
-  className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
-
-/>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</h3>
           </div>
         </div>
 
@@ -1784,7 +1771,7 @@ export function Games() {
   }, []);
 
   return (
-    <section className="border-t border-border/50 px-6 py-24">
+    <section className="border-t border-border/50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="games"

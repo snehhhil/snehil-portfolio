@@ -34,7 +34,7 @@ export function Header() {
           : "shadow-sm"
       }`}
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6 sm:py-6">
         <a
           href="#"
           onClick={(event) => {
@@ -47,7 +47,7 @@ export function Header() {
           <span className="cursor-blink text-accent-cyan">_</span>
         </a>
 
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav className="hidden items-center gap-6 lg:gap-10 md:flex">
           {navLinks.map((link) => {
             const active = activeSection === link.href.replace("#", "");
             return (
@@ -78,7 +78,7 @@ export function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="relative z-[81] border-t border-border bg-background px-6 py-4 shadow-2xl backdrop-blur-xl md:hidden">
+        <nav className="relative z-[81] border-t border-border bg-background px-4 py-4 shadow-2xl backdrop-blur-xl sm:px-6 md:hidden">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => {
               const active = activeSection === link.href.replace("#", "");

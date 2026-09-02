@@ -32,7 +32,7 @@ const links = [
 
 export function Contact() {
   return (
-    <section className="border-t border-border/50 px-6 py-24">
+    <section className="border-t border-border/50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="contact"
@@ -47,14 +47,14 @@ export function Contact() {
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
               rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-              className="w-full max-w-xl group flex items-center gap-4 rounded-lg border border-border bg-surface p-5 transition-all hover:border-accent-cyan/40 hover:bg-accent-cyan/5"
+              className="group flex w-full max-w-xl min-w-0 items-center gap-4 rounded-lg border border-border bg-surface p-5 transition-all hover:border-accent-cyan/40 hover:bg-accent-cyan/5"
             >
               <div className="rounded-md bg-accent-cyan/10 p-2.5 text-accent-cyan transition-colors group-hover:bg-accent-cyan/20">
                 <Icon size={18} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-mono text-xs text-muted">{label}</p>
-                <p className="text-sm font-medium transition-colors group-hover:text-accent-cyan">
+                <p className="break-words text-sm font-medium transition-colors group-hover:text-accent-cyan">
                   {value}
                 </p>
               </div>

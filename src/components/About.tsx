@@ -5,7 +5,7 @@ import { ResumeButton } from "./ResumeButton";
 
 export function About() {
   return (
-    <section className="border-t border-border/50 px-6 py-24">
+    <section className="border-t border-border/50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="about"
@@ -25,7 +25,7 @@ export function About() {
             </div>
           </div>
 
-          <div className="-translate-y-[50px] rounded-lg border border-border bg-surface p-6 lg:col-span-2">
+          <div className="rounded-lg border border-border bg-surface p-6 lg:-translate-y-[50px] lg:col-span-2">
             <h3 className="mb-4 font-mono text-xs uppercase tracking-wider text-accent-green">
               interests[]
             </h3>

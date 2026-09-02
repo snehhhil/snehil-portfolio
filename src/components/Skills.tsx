@@ -9,7 +9,7 @@ const categories = [
 
 export function Skills() {
   return (
-    <section className="border-t border-border/50 px-6 py-24">
+    <section className="border-t border-border/50 px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="skills"

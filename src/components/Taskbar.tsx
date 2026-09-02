@@ -66,7 +66,7 @@ export default function Taskbar() {
       title={label}
       onClick={onClick}
       className={
-        "h-10 w-10 flex items-center justify-center rounded-md ring-1 transition-all duration-200 " +
+        "h-9 w-9 shrink-0 flex items-center justify-center rounded-md ring-1 transition-all duration-200 md:h-10 md:w-10 " +
         (active
           ? "bg-accent-cyan/15 ring-accent-cyan/60 text-accent-cyan shadow-sm"
           : "bg-surface/90 ring-border text-muted hover:bg-surface hover:text-accent-cyan")
@@ -78,7 +78,7 @@ export default function Taskbar() {
 
   return (
     <div
-      className="fixed right-[10px] top-1/2 z-40 -translate-y-1/2"
+      className="fixed bottom-3 left-1/2 right-auto top-auto z-40 -translate-x-1/2 md:bottom-auto md:left-auto md:right-[10px] md:top-1/2 md:translate-x-0 md:-translate-y-1/2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -93,13 +93,13 @@ export default function Taskbar() {
 
         <div className="flex items-center h-full">
           <div
-            className={`flex flex-col items-center gap-3 rounded-lg border border-border bg-surface/90 py-2 px-3 shadow-md transition-all duration-300 ${
+            className={`flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-row items-center gap-2 overflow-x-auto rounded-lg border border-border bg-surface/90 px-2 py-2 shadow-md transition-all duration-300 md:w-auto md:max-w-none md:flex-col md:gap-3 md:overflow-visible md:px-3 ${
               visible
                 ? "opacity-100 translate-x-0 pointer-events-auto"
                 : "opacity-0 -translate-x-2 pointer-events-none"
             }`}
           >
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-row items-center gap-2 md:flex-col md:gap-3">
               <button
                 type="button"
                 aria-label={isPinned ? "Unpin taskbar" : "Pin taskbar"}
@@ -112,7 +112,7 @@ export default function Taskbar() {
                   }
                 }}
                 className={
-                  "h-9 w-9 rounded-md transition-all duration-200 flex items-center justify-center " +
+                  "h-8 w-8 shrink-0 rounded-md transition-all duration-200 flex items-center justify-center md:h-9 md:w-9 " +
                   (isPinned
                     ? "bg-red-500/10 text-red-300 hover:bg-red-500/15"
                     : "bg-surface/90 text-muted hover:text-accent-cyan")
