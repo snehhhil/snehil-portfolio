@@ -494,17 +494,13 @@ function SwipeSurface({ children, onTap }: { children: ReactNode; onTap?: () => 
 }
 
 function Leaderboard({ gameId, score }: { gameId: GameId; score?: number }) {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-
-  useEffect(() => {
-    setEntries(readLeaderboard(gameId));
-  }, [gameId]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(() => readLeaderboard(gameId));
 
   useEffect(() => {
     if (typeof score !== "number") return;
     const next = saveLeaderboard(gameId, score);
     if (next) {
-      setEntries(next);
+      queueMicrotask(() => setEntries(next));
     }
   }, [gameId, score]);
 
@@ -711,19 +707,13 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
         <div className="grid min-w-0 gap-4 lg:grid-cols-[1.4fr_0.9fr]">
           <div className="game-content min-w-0 overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background/70 to-surface/80 p-2 shadow-inner shadow-black/10 sm:p-3">{gameContent}</div>
           <div className="hidden lg:block">
-            <Leaderboard gameId={gameId} score={latestScore} />
+            <Leaderboard key={gameId} gameId={gameId} score={latestScore} />
           </div>
         </div>
 
         {showControlGuide && (
           <div className="game-over-overlay absolute -inset-px z-30 flex items-center justify-center rounded-2xl border border-border bg-background/80 p-4 backdrop-blur-md">
             <div className="control-guide-card relative w-full max-w-sm rounded-2xl border border-accent-cyan/30 bg-[#0b1018] p-6 font-mono shadow-xl">
-              <div className="mb-5 flex items-center gap-2 border-b border-border pb-3 text-xs text-muted">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                {/* <span className="ml-1">control-protocol.sh</span> */}
-              </div>
               <p className="text-xs uppercase tracking-[0.22em] text-accent-cyan">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</p>
               <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
                 <p><span className="text-accent-green">desktop:</span> {NEW_CONTROL_GUIDES[gameId].desktop}</p>
@@ -771,6 +761,11 @@ function SnakeGame({ onScoreChange, isPaused = false }: GameProps) {
   const [direction, setDirection] = useState<Direction>({ x: 1, y: 0 });
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const snakeRef = useRef(snake);
+
+  useEffect(() => {
+    snakeRef.current = snake;
+  }, [snake]);
 
   useEffect(() => {
     onScoreChange(score);
@@ -800,30 +795,27 @@ function SnakeGame({ onScoreChange, isPaused = false }: GameProps) {
     const speed = Math.max(90, 190 - Math.floor(score / 20) * 10);
 
     const timer = window.setInterval(() => {
-      setSnake((currentSnake) => {
-        const head = currentSnake[0];
-        const nextHead = { x: head.x + direction.x, y: head.y + direction.y };
+      const currentSnake = snakeRef.current;
+      const head = currentSnake[0];
+      const nextHead = { x: head.x + direction.x, y: head.y + direction.y };
+      const hitsWall = nextHead.x < 0 || nextHead.x >= BOARD_SIZE || nextHead.y < 0 || nextHead.y >= BOARD_SIZE;
+      const hitsSelf = currentSnake.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
 
-        const hitsWall = nextHead.x < 0 || nextHead.x >= BOARD_SIZE || nextHead.y < 0 || nextHead.y >= BOARD_SIZE;
-        const hitsSelf = currentSnake.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
+      if (hitsWall || hitsSelf) {
+        setGameOver(true);
+        signalGameOver();
+        return;
+      }
 
-        if (hitsWall || hitsSelf) {
-          setGameOver(true);
-          signalGameOver();
-          return currentSnake;
-        }
+      const ateFood = nextHead.x === food.x && nextHead.y === food.y;
+      const nextSnake = [nextHead, ...currentSnake];
+      const keptSnake = ateFood ? nextSnake : nextSnake.slice(0, -1);
 
-        const ateFood = nextHead.x === food.x && nextHead.y === food.y;
-        const nextSnake = [nextHead, ...currentSnake];
-        const keptSnake = ateFood ? nextSnake : nextSnake.slice(0, -1);
-
-        if (ateFood) {
-          setScore((previous) => previous + 10);
-          setFood(randomSnakeFood(keptSnake));
-        }
-
-        return keptSnake;
-      });
+      setSnake(keptSnake);
+      if (ateFood) {
+        setScore((previous) => previous + 10);
+        setFood(randomSnakeFood(keptSnake));
+      }
     }, speed);
 
     return () => window.clearInterval(timer);
@@ -1335,8 +1327,8 @@ function PacmanGame({ onScoreChange }: GameProps) {
 
   useEffect(() => {
     if (player.x === ghost.x && player.y === ghost.y) {
-      setGameOver(true);
       signalGameOver();
+      queueMicrotask(() => setGameOver(true));
     }
   }, [ghost, player]);
 
@@ -1344,12 +1336,14 @@ function PacmanGame({ onScoreChange }: GameProps) {
     const hasPellet = pellets[player.y][player.x] !== 0;
     if (!hasPellet) return;
 
-    setPellets((current) => {
-      const clone = current.map((row) => [...row]);
-      clone[player.y][player.x] = 0;
-      return clone;
+    queueMicrotask(() => {
+      setPellets((current) => {
+        const clone = current.map((row) => [...row]);
+        clone[player.y][player.x] = 0;
+        return clone;
+      });
+      setScore((previous) => previous + 5);
     });
-    setScore((previous) => previous + 5);
   }, [player, pellets]);
 
   const reset = () => {
@@ -1579,19 +1573,56 @@ function MazeGame({ onScoreChange, isPaused = false }: GameProps) {
 }
 
 function SudokuGame({ onScoreChange, isPaused = false }: GameProps) {
-  const initialPuzzleRef = useRef(createSudokuPuzzle());
+  const [initialPuzzle] = useState(createSudokuPuzzle);
   const [sudokuState, setSudokuState] = useState(() => ({
-    puzzleBoard: initialPuzzleRef.current,
-    board: initialPuzzleRef.current.map((row) => [...row]),
+    puzzleBoard: initialPuzzle,
+    board: initialPuzzle.map((row) => [...row]),
   }));
-  const [selected, setSelected] = useState<[number, number] | null>(() => findFirstEditableCell(initialPuzzleRef.current));
+  const [selected, setSelected] = useState<[number, number] | null>(() => findFirstEditableCell(initialPuzzle));
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState(() => {
-    const [row, col] = findFirstEditableCell(initialPuzzleRef.current);
+    const [row, col] = findFirstEditableCell(initialPuzzle);
     return `Selected row ${row + 1}, col ${col + 1}. Use arrow keys to move.`;
   });
 
   const { puzzleBoard, board } = sudokuState;
+
+  const handleValue = (value: number) => {
+    if (!selected) {
+      setStatus("Choose a puzzle square first.");
+      return;
+    }
+
+    const [row, col] = selected;
+    if (puzzleBoard[row][col] !== 0) {
+      setStatus("That square is part of the puzzle clues.");
+      return;
+    }
+
+    const nextBoard = board.map((boardRow) => [...boardRow]);
+    nextBoard[row][col] = value;
+    setSudokuState((current) => ({
+      ...current,
+      board: nextBoard,
+    }));
+
+    if (value === 0) {
+      setStatus("Cell cleared.");
+      return;
+    }
+
+    if (value === SUDOKU_SOLUTION[row][col]) {
+      setScore((previous) => previous + 10);
+      setStatus("Correct move.");
+    } else {
+      setScore((previous) => Math.max(0, previous - 2));
+      setStatus("That number does not fit the solution.");
+    }
+
+    if (nextBoard.every((boardRow, r) => boardRow.every((cell, c) => cell === SUDOKU_SOLUTION[r][c]))) {
+      setStatus("Puzzle solved — excellent run.");
+    }
+  };
 
   useEffect(() => {
     onScoreChange(score);
@@ -1635,7 +1666,7 @@ function SudokuGame({ onScoreChange, isPaused = false }: GameProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board, isPaused, selected]);
+  }, [handleValue, isPaused, puzzleBoard, selected]);
 
   const reset = () => {
     const nextPuzzle = createSudokuPuzzle();
@@ -1657,43 +1688,6 @@ function SudokuGame({ onScoreChange, isPaused = false }: GameProps) {
 
     setSelected([row, col]);
     setStatus(`Selected row ${row + 1}, col ${col + 1}. Use arrow keys to move.`);
-  };
-
-  const handleValue = (value: number) => {
-    if (!selected) {
-      setStatus("Choose a puzzle square first.");
-      return;
-    }
-
-    const [row, col] = selected;
-    if (puzzleBoard[row][col] !== 0) {
-      setStatus("That square is part of the puzzle clues.");
-      return;
-    }
-
-    const nextBoard = board.map((boardRow) => [...boardRow]);
-    nextBoard[row][col] = value;
-    setSudokuState((current) => ({
-      ...current,
-      board: nextBoard,
-    }));
-
-    if (value === 0) {
-      setStatus("Cell cleared.");
-      return;
-    }
-
-    if (value === SUDOKU_SOLUTION[row][col]) {
-      setScore((previous) => previous + 10);
-      setStatus("Correct move.");
-    } else {
-      setScore((previous) => Math.max(0, previous - 2));
-      setStatus("That number does not fit the solution.");
-    }
-
-    if (nextBoard.every((boardRow, r) => boardRow.every((cell, c) => cell === SUDOKU_SOLUTION[r][c]))) {
-      setStatus("Puzzle solved — excellent run.");
-    }
   };
 
   return (
