@@ -544,6 +544,11 @@ export function Terminal() {
           " flex flex-col cursor-text overflow-hidden rounded-lg border border-border bg-surface shadow-2xl transition-all duration-300 ease-out transform " +
           (isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none")
         }
+        onKeyDownCapture={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+          }
+        }}
         onClick={() => inputRef.current?.focus()}
         role="presentation"
       >
