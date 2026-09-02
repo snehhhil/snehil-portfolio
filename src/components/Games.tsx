@@ -625,21 +625,34 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
     if (!containerRef.current) return;
 
     try {
-      if (document.fullscreenElement) {
+      if (document.fullscreenElement === containerRef.current) {
         await document.exitFullscreen();
-        setIsFullscreen(false);
         return;
       }
 
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+
       await containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
     } catch {
       setIsFullscreen(false);
     }
   }
 
+  const closeGame = async () => {
+    if (document.fullscreenElement === containerRef.current) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // The modal can still close if the browser has already left fullscreen.
+      }
+    }
+    onClose();
+  };
+
   useEffect(() => {
-    const handleChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const handleChange = () => setIsFullscreen(document.fullscreenElement === containerRef.current);
     document.addEventListener("fullscreenchange", handleChange);
     return () => document.removeEventListener("fullscreenchange", handleChange);
   }, []);
@@ -678,15 +691,16 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
           <div className="absolute left-0 top-1 flex gap-2">
             <button
               type="button"
-              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              onClick={toggleFullscreen}
-              className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
+              aria-label="Close game"
+              onClick={closeGame}
+              className="h-3 w-3 rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
             />
             <button
               type="button"
-              aria-label="Close game"
-              onClick={onClose}
-              className="h-3 w-3 rounded-full bg-[#ff5f57] transition-opacity hover:opacity-80"
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              onClick={toggleFullscreen}
+              className="h-3 w-3 rounded-full bg-[#28c840] transition-opacity hover:opacity-80"
             />
           </div>
           <div>
@@ -708,15 +722,15 @@ function GameShell({ gameId, onClose }: { gameId: GameId; onClose: () => void })
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                <span className="ml-1">control-protocol.sh</span>
+                {/* <span className="ml-1">control-protocol.sh</span> */}
               </div>
-              <p className="text-xs uppercase tracking-[0.22em] text-accent-cyan">{GAME_CATALOG.find((item) => item.id === gameId)?.title} · input map</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-accent-cyan">{GAME_CATALOG.find((item) => item.id === gameId)?.title}</p>
               <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted">
                 <p><span className="text-accent-green">desktop:</span> {NEW_CONTROL_GUIDES[gameId].desktop}</p>
                 <p><span className="text-accent-green">touch:</span> {NEW_CONTROL_GUIDES[gameId].touch}</p>
               </div>
               <button type="button" onClick={() => setShowControlGuide(false)} className="mt-6 w-full rounded-md border border-accent-cyan/50 bg-accent-cyan/10 px-4 py-2.5 text-sm text-accent-cyan transition hover:bg-accent-cyan/20">
-                $ start {gameId}
+                start {gameId}
               </button>
             </div>
           </div>
