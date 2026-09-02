@@ -1788,7 +1788,7 @@ export function Games() {
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="games"
-          number="04. games"
+          number="05. games"
           title="Mini-game lab"
         />
 
