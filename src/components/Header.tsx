@@ -97,7 +97,7 @@ export function Header() {
                 </a>
               );
             })}
-            <ResumeButton />
+            <ResumeButton onClose={() => setMenuOpen(false)} />
           </div>
         </nav>
       )}

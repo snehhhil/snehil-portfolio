@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Gamepad2, Home, Lightbulb, Mail, Pin, Terminal as TerminalIcon, GraduationCap } from "lucide-react";
+import { Gamepad2, Home, Lightbulb, Mail, PanelBottom, Pin, Terminal as TerminalIcon, GraduationCap } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { navLinks } from "@/data/portfolio";
 import { useActiveSection } from "@/hooks/useActiveSection";
@@ -85,11 +85,19 @@ export default function Taskbar() {
       <div className="relative h-full">
         {/* <TaskbarHint visible={showHint} /> */}
 
-        <div
-          className={`absolute right-0 top-0 bottom-0 w-1 rounded-l-full bg-accent-cyan/30 shadow-lg transition-all duration-300 ease-out ${
-            visible ? "-translate-x-[10px] opacity-0" : "translate-x-0 opacity-100"
+        <button
+          type="button"
+          aria-label="Show taskbar"
+          title="Show taskbar"
+          onClick={() => setIsPinned(true)}
+          className={`absolute right-0 top-1/2 z-10 flex h-12 w-10 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-accent-cyan/40 bg-surface/95 text-accent-cyan shadow-lg transition-all duration-300 ease-out md:h-16 md:w-3 ${
+            visible
+              ? "pointer-events-none translate-x-2 opacity-0"
+              : "translate-x-0 opacity-100"
           }`}
-        />
+        >
+          <PanelBottom size={16} className="md:hidden" />
+        </button>
 
         <div className="flex items-center h-full">
           <div

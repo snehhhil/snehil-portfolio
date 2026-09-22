@@ -105,6 +105,52 @@ body::before {
   }
 }
 
+@keyframes resume-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes resume-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.resume-modal {
+  animation: resume-backdrop-in 180ms ease-out both;
+}
+
+.resume-modal-panel {
+  width: min(calc(100vw - 1rem), calc((100vh - 1rem) * 0.7066667));
+  height: min(calc(100vh - 1rem), calc((100vw - 1rem) * 1.4150943));
+  width: min(calc(100vw - 1rem), calc((100dvh - 1rem) * 0.7066667));
+  height: min(calc(100dvh - 1rem), calc((100vw - 1rem) * 1.4150943));
+  transform-origin: center;
+  animation: resume-modal-in 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .resume-modal-panel {
+    width: min(calc(100vw - 3rem), calc((100vh - 3rem) * 0.7066667));
+    height: min(calc(100vh - 3rem), calc((100vw - 3rem) * 1.4150943));
+    width: min(calc(100vw - 3rem), calc((100dvh - 3rem) * 0.7066667));
+    height: min(calc(100dvh - 3rem), calc((100vw - 3rem) * 1.4150943));
+  }
+}
+
 .game-over-card {
   animation: game-over-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both, game-over-pulse 2s ease-in-out 420ms infinite;
 }
