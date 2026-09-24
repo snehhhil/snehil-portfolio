@@ -15,13 +15,14 @@ const INITIAL_LINES: TerminalLine[] = [
   {type : "input", text: "snhl initiate terminal"},
   { type: "output", text: "Snehil's terminal initialized" },
   // { type: "input", text: "whoami" },
-  { type: "output", text: `${profile.name} — SDE @ Servosys` },
+  // { type: "output", text: `${profile.name} — SDE @ Servosys` },
   // { type: "input", text: "cat interests.txt" },
   // {
   //   type: "output",
   //   text: "FinTech platforms · React & Java · ML & CV experiments",
   // },
-  { type: "hint", text: "Type 'snhl help' for available commands" },
+  { type: "hint", text: "Type 'snhl help' for available commands. Make sure to start the command with 'snhl'."},
+  // { type: "hint", text: "Type 'snhl help' for available commands" },
 ];
 
 const COMMAND_ALIASES: Record<string, string[]> = {

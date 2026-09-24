@@ -7,6 +7,7 @@ import { Games } from "@/components/Games";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Skills } from "@/components/Skills";
+import { Trivia } from "@/components/Trivia";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
         <Skills />
         <Education />
         <Games />
+        <Trivia />
         <Contact />
       </main>
       <Footer />

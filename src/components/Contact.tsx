@@ -36,7 +36,7 @@ export function Contact() {
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           id="contact"
-          number="06. contact"
+          number="07. contact"
           title="Let's connect"
  />
 

@@ -7,7 +7,7 @@ const MODEL_CANDIDATES = [
 ];
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-function buildRequestBody(query: string, model: string) {
+function buildRequestBody(query: string, model: string, maxTokens = 250) {
   return {
     model,
     messages: [
@@ -17,7 +17,7 @@ function buildRequestBody(query: string, model: string) {
       },
     ],
     session_id: "snehil-portfolio-terminal",
-    max_tokens: 250,
+    max_tokens: maxTokens,
     temperature: 0.2,
   };
 }
@@ -66,6 +66,9 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const query = typeof body?.query === "string" ? body.query.trim() : "";
+  const maxTokens = typeof body?.maxTokens === "number"
+    ? Math.min(Math.max(body.maxTokens, 250), 1600)
+    : 250;
 
   if (!query) {
     return NextResponse.json(
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
   let result: string | null = null;
 
   for (const model of MODEL_CANDIDATES) {
-    const payload = buildRequestBody(query, model);
+    const payload = buildRequestBody(query, model, maxTokens);
 
     try {
       const response = await fetch(OPENROUTER_URL, {

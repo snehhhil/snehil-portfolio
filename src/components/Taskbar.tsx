@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Gamepad2, Home, Lightbulb, Mail, PanelBottom, Pin, Terminal as TerminalIcon, GraduationCap } from "lucide-react";
+import { BrainCircuit, Gamepad2, Home, Lightbulb, Mail, PanelBottom, Pin, Terminal as TerminalIcon, GraduationCap } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { navLinks } from "@/data/portfolio";
 import { useActiveSection } from "@/hooks/useActiveSection";
@@ -56,6 +56,7 @@ export default function Taskbar() {
     ),
     education: <GraduationCap size={18} className="text-current" />,
     games: <Gamepad2 size={18} className="text-current" />,
+    bytewise: <BrainCircuit size={18} className="text-current" />,
     contact: <Mail size={18} className="text-current" />,
   };
 

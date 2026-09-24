@@ -1,7 +1,7 @@
 export const profile = {
   name: "Snehil",
-  title: "Software Development Engineer",
-  tagline: "Full-stack engineer",
+  title: "Software Developer Engineer",
+  // tagline: "Full-stack engineer",
   location: "Ghaziabad, UP, India",
   email: "snehillsinghh@gmail.com",
   github: "https://github.com/snehhhil",
@@ -135,5 +135,6 @@ export const navLinks = [
   { label: "Skills", href: "#skills" },
   { label: "Education", href: "#education" },
   { label: "Games", href: "#games" },
+  { label: "Bytewise", href: "#bytewise" },
   { label: "Contact", href: "#contact" },
 ];
