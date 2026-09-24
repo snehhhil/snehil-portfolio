@@ -6,7 +6,6 @@ import { profile } from "@/data/portfolio";
 import { GithubIcon, InstagramIcon, LinkedinIcon } from "./SocialIcons";
 import { Terminal } from "./Terminal";
 // import { TaskbarHint } from "./TaskbarHint";
-import { ResumeButton } from "./ResumeButton";
 import { useTerminal } from "./TerminalProvider";
 
 const BOOT_MESSAGES = [
@@ -188,9 +187,6 @@ export function Hero() {
 
         <p className="animate-[fade-in_500ms_500ms_ease-out_both] mb-2 max-w-2xl opacity-0 text-xl text-muted sm:text-2xl">
           {profile.title}
-        </p>
-        <p className="animate-[fade-in_500ms_700ms_ease-out_both] mb-8 max-w-xl opacity-0 font-mono text-sm text-muted/80">
-          {profile.tagline}
         </p>
 
         <div data-terminal-anchor className="animate-[fade-in_500ms_900ms_ease-out_both] mb-8 flex opacity-0 justify-start">

@@ -1,7 +1,6 @@
 export const profile = {
   name: "Snehil",
   title: "Software Developer Engineer",
-  // tagline: "Full-stack engineer",
   location: "Ghaziabad, UP, India",
   email: "snehillsinghh@gmail.com",
   github: "https://github.com/snehhhil",
